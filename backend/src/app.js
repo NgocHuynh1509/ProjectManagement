@@ -7,9 +7,17 @@ app.use(cors());
 app.use(express.json());
 
 const authRoutes = require('./routes/authRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const { verifyToken, authorizeRole } = require('./middleware/authMiddleware');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/employees', verifyToken, authorizeRole(['manager']), employeeRoutes);
+app.use('/api/projects', verifyToken, authorizeRole(['manager']), projectRoutes);
+app.use('/api/attendance', verifyToken, authorizeRole(['manager']), attendanceRoutes);
+app.use('/api/dashboard', verifyToken, authorizeRole(['manager']), dashboardRoutes);
 
 app.get('/', (req, res) => {
     res.json({

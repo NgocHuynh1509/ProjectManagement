@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 exports.verifyToken = async (req, res, next) => {
     try {
@@ -15,7 +16,7 @@ exports.verifyToken = async (req, res, next) => {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('role')
             .eq('id', user.id)
