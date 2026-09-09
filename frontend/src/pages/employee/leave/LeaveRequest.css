@@ -1,0 +1,145 @@
+.leave-page {
+    padding: 30px;
+}
+
+.leave-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+
+.leave-card {
+    background: white;
+    border-radius: 14px;
+    padding: 25px;
+}
+
+.leave-card h2 {
+    margin: 0 0 22px;
+    font-size: 18px;
+}
+
+.leave-form-group {
+    margin-bottom: 16px;
+}
+
+.leave-form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.leave-form-group input,
+.leave-form-group select,
+.leave-form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.leave-date-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.leave-card form > button {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    background: #4f46e5;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.leave-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leave-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 9px;
+}
+
+.leave-item strong {
+    text-transform: capitalize;
+}
+
+.leave-item p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.leave-item small {
+    color: #64748b;
+}
+
+.leave-item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.leave-status {
+    padding: 5px 9px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.leave-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.leave-status.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.leave-status.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.leave-status.cancelled {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.leave-item-right button {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.leave-empty {
+    padding: 35px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+@media (max-width: 800px) {
+    .leave-page {
+        padding: 18px;
+    }
+
+    .leave-grid {
+        grid-template-columns: 1fr;
+    }
+}

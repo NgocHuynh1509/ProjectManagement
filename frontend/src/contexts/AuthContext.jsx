@@ -19,13 +19,15 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         const data = await authService.login(email, password);
+
         const { session, user } = data;
-        
-        // Save token and user info
+
         localStorage.setItem('token', session.access_token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         setUser(user);
+
+        return user;
     };
 
     const logout = () => {

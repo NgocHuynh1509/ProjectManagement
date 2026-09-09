@@ -1,0 +1,101 @@
+.project-detail-card {
+    background: white;
+    border-radius: 14px;
+    padding: 28px;
+}
+
+.project-detail-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.project-detail-icon {
+    font-size: 35px;
+}
+
+.project-detail-header h1 {
+    margin: 10px 0 5px;
+}
+
+.project-detail-header p {
+    color: #6b7280;
+}
+
+.project-status {
+    height: fit-content;
+    padding: 7px 12px;
+    border-radius: 7px;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.project-detail-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.project-detail-meta div {
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.project-detail-meta span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.project-phases {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 22px;
+    margin-top: 22px;
+}
+
+.project-phases h2 {
+    font-size: 18px;
+}
+
+.phase-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 9px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.phase-item p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.phase-item > span {
+    padding: 5px 9px;
+    background: #e0e7ff;
+    border-radius: 5px;
+    font-size: 11px;
+}
+
+.no-data {
+    color: #9ca3af;
+}
+
+@media (max-width: 700px) {
+    .project-detail-header {
+        flex-direction: column;
+    }
+
+    .project-detail-meta {
+        grid-template-columns: 1fr;
+    }
+}

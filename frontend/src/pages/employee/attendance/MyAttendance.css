@@ -1,0 +1,153 @@
+.attendance-page {
+    padding: 30px;
+}
+
+.attendance-page .employee-page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.attendance-filter {
+    display: flex;
+    gap: 10px;
+}
+
+.attendance-filter select {
+    padding: 10px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+}
+
+.attendance-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.attendance-stat {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.attendance-stat span {
+    font-size: 24px;
+}
+
+.attendance-stat strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 25px;
+}
+
+.attendance-stat p {
+    margin: 5px 0 0;
+    color: #6b7280;
+}
+
+.attendance-card {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.attendance-card-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.attendance-card-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.attendance-table-wrapper {
+    overflow-x: auto;
+}
+
+.attendance-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+.attendance-table-wrapper th,
+.attendance-table-wrapper td {
+    padding: 13px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+}
+
+.attendance-table-wrapper th {
+    background: #f8fafc;
+    color: #475569;
+}
+
+.attendance-status {
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.attendance-status.normal {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.attendance-status.late {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.attendance-status.early_leave {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.attendance-status.absent {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.attendance-status.leave {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.attendance-empty {
+    text-align: center !important;
+    padding: 35px !important;
+    color: #6b7280;
+}
+
+.attendance-loading {
+    padding: 50px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .attendance-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .attendance-page {
+        padding: 18px;
+    }
+
+    .attendance-page .employee-page-heading {
+        align-items: flex-start;
+        gap: 15px;
+        flex-direction: column;
+    }
+
+    .attendance-stat-grid {
+        grid-template-columns: 1fr;
+    }
+}
