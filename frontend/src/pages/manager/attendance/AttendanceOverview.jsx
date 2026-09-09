@@ -72,12 +72,338 @@ function LogsTab() {
 }
 
 function RulesTab() {
-  const [rules, setRules] = useState([]); const [showForm, setShowForm] = useState(false); const [form, setForm] = useState({ name: '', work_start_time: '08:00', work_end_time: '17:30', late_threshold_minutes: 0, early_leave_threshold_minutes: 0, break_minutes: 60, overtime_after_minutes: '' }); const [error, setError] = useState('');
-  const load = () => api.get('/attendance/rules').then(({ data }) => setRules(data)).catch((requestError) => setError(requestError.response?.data?.error || 'Không thể tải quy tắc.'));
-  useEffect(() => { load(); }, []);
-  const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
-  const submit = async (event) => { event.preventDefault(); setError(''); try { await api.post('/attendance/rules', form); setShowForm(false); setForm({ name: '', work_start_time: '08:00', work_end_time: '17:30', late_threshold_minutes: 0, early_leave_threshold_minutes: 0, break_minutes: 60, overtime_after_minutes: '' }); load(); } catch (requestError) { setError(requestError.response?.data?.error || 'Không thể tạo quy tắc.'); } };
-  return <DataPanel title="Quy tắc chấm công" action={<button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={17} /> Thêm quy tắc</button>} error={error}>{showForm && <RuleForm form={form} update={update} submit={submit} cancel={() => setShowForm(false)} />}{!rules.length && !showForm ? <div className="table-message">Chưa có quy tắc.</div> : <table className="data-table"><thead><tr><th>Tên ca</th><th>Giờ làm</th><th>Cho phép trễ</th><th>Cho phép sớm</th><th>Nghỉ giữa ca</th><th>Tăng ca sau</th></tr></thead><tbody>{rules.map((rule) => <tr key={rule.id}><td>{rule.name}</td><td>{rule.work_start_time} - {rule.work_end_time}</td><td>{rule.late_threshold_minutes} phút</td><td>{rule.early_leave_threshold_minutes} phút</td><td>{rule.break_minutes} phút</td><td>{rule.overtime_after_minutes || '-'} phút</td></tr>)}</tbody></table>}</DataPanel>;
+  const emptyForm = {
+    name: '',
+    work_start_time: '08:00',
+    work_end_time: '17:30',
+    late_threshold_minutes: 0,
+    early_leave_threshold_minutes: 0,
+    break_minutes: 60,
+    overtime_after_minutes: '',
+    applicable_department_id: ''
+  };
+
+  const [rules, setRules] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
+  const [showForm, setShowForm] = useState(false);
+  const [editingRule, setEditingRule] = useState(null);
+
+  const [form, setForm] = useState(emptyForm);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadRules = async () => {
+    try {
+      setLoading(true);
+
+      const { data } =
+        await api.get('/attendance/rules');
+
+      setRules(data || []);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        'Không thể tải quy tắc.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDepartments = async () => {
+    try {
+      const { data } =
+        await api.get(
+          '/attendance/rules/options'
+        );
+
+      setDepartments(
+        data.departments || []
+      );
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        'Không thể tải phòng ban.'
+      );
+    }
+  };
+
+  useEffect(() => {
+    loadRules();
+    loadDepartments();
+  }, []);
+
+  const openCreateForm = () => {
+    setEditingRule(null);
+    setForm(emptyForm);
+    setError('');
+    setShowForm(true);
+  };
+
+  const openEditForm = (rule) => {
+    setEditingRule(rule);
+
+    setForm({
+      name: rule.name || '',
+
+      work_start_time:
+        rule.work_start_time?.slice(0, 5) ||
+        '08:00',
+
+      work_end_time:
+        rule.work_end_time?.slice(0, 5) ||
+        '17:30',
+
+      late_threshold_minutes:
+        rule.late_threshold_minutes ?? 0,
+
+      early_leave_threshold_minutes:
+        rule.early_leave_threshold_minutes ?? 0,
+
+      break_minutes:
+        rule.break_minutes ?? 60,
+
+      overtime_after_minutes:
+        rule.overtime_after_minutes ?? '',
+
+      applicable_department_id:
+        rule.applicable_department_id || ''
+    });
+
+    setError('');
+    setShowForm(true);
+  };
+
+  const update = (event) => {
+    const {
+      name,
+      value
+    } = event.target;
+
+    setForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+
+    setError('');
+    setSaving(true);
+
+    try {
+      const payload = {
+        ...form,
+
+        late_threshold_minutes:
+          Number(
+            form.late_threshold_minutes
+          ),
+
+        early_leave_threshold_minutes:
+          Number(
+            form.early_leave_threshold_minutes
+          ),
+
+        break_minutes:
+          Number(form.break_minutes),
+
+        overtime_after_minutes:
+          form.overtime_after_minutes === ''
+            ? null
+            : Number(
+                form.overtime_after_minutes
+              ),
+
+        applicable_department_id:
+          form.applicable_department_id ||
+          null
+      };
+
+      if (editingRule) {
+        await api.put(
+          `/attendance/rules/${editingRule.id}`,
+          payload
+        );
+      } else {
+        await api.post(
+          '/attendance/rules',
+          payload
+        );
+      }
+
+      setShowForm(false);
+      setEditingRule(null);
+      setForm(emptyForm);
+
+      await loadRules();
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        'Không thể lưu quy tắc.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRule = async (rule) => {
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa quy tắc "${rule.name}" không?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setError('');
+
+      await api.delete(
+        `/attendance/rules/${rule.id}`
+      );
+
+      await loadRules();
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        'Không thể xóa quy tắc.'
+      );
+    }
+  };
+
+  return (
+    <DataPanel
+      title="Quy tắc chấm công"
+      error={error}
+      action={
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={openCreateForm}
+        >
+          <Plus size={17} />
+          Thêm quy tắc
+        </button>
+      }
+    >
+      {showForm && (
+        <RuleForm
+          form={form}
+          departments={departments}
+          editingRule={editingRule}
+          update={update}
+          submit={submit}
+          cancel={() => {
+            setShowForm(false);
+            setEditingRule(null);
+          }}
+          saving={saving}
+        />
+      )}
+
+      {loading ? (
+        <div className="table-message">
+          Đang tải quy tắc...
+        </div>
+      ) : rules.length === 0 ? (
+        <div className="table-message">
+          Chưa có quy tắc chấm công.
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Tên ca</th>
+                <th>Giờ làm</th>
+                <th>Cho phép trễ</th>
+                <th>Cho phép sớm</th>
+                <th>Nghỉ giữa ca</th>
+                <th>Tăng ca sau</th>
+                <th>Phạm vi áp dụng</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rules.map((rule) => (
+                <tr key={rule.id}>
+                  <td>
+                    <strong>
+                      {rule.name}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {rule.work_start_time?.slice(0, 5)}
+                    {' - '}
+                    {rule.work_end_time?.slice(0, 5)}
+                  </td>
+
+                  <td>
+                    {rule.late_threshold_minutes}
+                    {' phút'}
+                  </td>
+
+                  <td>
+                    {rule.early_leave_threshold_minutes}
+                    {' phút'}
+                  </td>
+
+                  <td>
+                    {rule.break_minutes}
+                    {' phút'}
+                  </td>
+
+                  <td>
+                    {rule.overtime_after_minutes ??
+                      '-'}
+                    {rule.overtime_after_minutes !== null &&
+                    rule.overtime_after_minutes !== undefined
+                      ? ' phút'
+                      : ''}
+                  </td>
+
+                  <td>
+                    {rule.applicable_department
+                      ? rule.applicable_department.name
+                      : 'Toàn công ty'}
+                  </td>
+
+                  <td>
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() =>
+                          openEditForm(rule)
+                        }
+                      >
+                        Sửa
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() =>
+                          deleteRule(rule)
+                        }
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </DataPanel>
+  );
 }
 
 function DevicesTab() {
@@ -89,7 +415,165 @@ function DevicesTab() {
   return <DataPanel title="Thiết bị chấm công" action={<button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={17} /> Thêm thiết bị</button>} error={error}>{showForm && <form className="inline-form" onSubmit={submit}>{Object.entries({ device_code: 'Mã thiết bị *', device_name: 'Tên thiết bị', location: 'Vị trí', ip_address: 'Địa chỉ IP' }).map(([name, label]) => <label key={name}>{label}<input className="form-input" name={name} value={form[name]} onChange={update} required={name === 'device_code'} /></label>)}<button className="btn btn-primary" type="submit">Lưu</button></form>}<table className="data-table"><thead><tr><th>Mã</th><th>Tên</th><th>Vị trí</th><th>IP</th><th>Trạng thái</th></tr></thead><tbody><TableState loading={false} error="" empty={!devices.length} colSpan="5" />{devices.map((device) => <tr key={device.id}><td>{device.device_code}</td><td>{device.device_name || '-'}</td><td>{device.location || '-'}</td><td>{device.ip_address || '-'}</td><td><span className="badge active">Đã cấu hình</span></td></tr>)}</tbody></table></DataPanel>;
 }
 
-function RuleForm({ form, update, submit, cancel }) { return <form className="inline-form" onSubmit={submit}><label>Tên ca *<input className="form-input" name="name" value={form.name} onChange={update} required /></label><label>Giờ vào<input className="form-input" type="time" name="work_start_time" value={form.work_start_time} onChange={update} required /></label><label>Giờ ra<input className="form-input" type="time" name="work_end_time" value={form.work_end_time} onChange={update} required /></label><label>Cho phép trễ (phút)<input className="form-input" type="number" min="0" name="late_threshold_minutes" value={form.late_threshold_minutes} onChange={update} /></label><label>Cho phép sớm (phút)<input className="form-input" type="number" min="0" name="early_leave_threshold_minutes" value={form.early_leave_threshold_minutes} onChange={update} /></label><label>Nghỉ giữa ca (phút)<input className="form-input" type="number" min="0" name="break_minutes" value={form.break_minutes} onChange={update} /></label><label>Tăng ca sau (phút)<input className="form-input" type="number" min="0" name="overtime_after_minutes" value={form.overtime_after_minutes} onChange={update} /></label><div className="form-actions"><button type="button" className="btn btn-outline" onClick={cancel}>Huỷ</button><button type="submit" className="btn btn-primary">Lưu quy tắc</button></div></form>; }
+function RuleForm({
+  form,
+  departments,
+  editingRule,
+  update,
+  submit,
+  cancel,
+  saving
+}) {
+  return (
+    <form
+      className="attendance-rule-form"
+      onSubmit={submit}
+    >
+      <div className="form-grid">
+        <label>
+          Tên ca *
+          <input
+            className="form-input"
+            name="name"
+            value={form.name}
+            onChange={update}
+            placeholder="VD: Ca hành chính"
+            required
+          />
+        </label>
+
+        <label>
+          Phạm vi áp dụng
+          <select
+            className="form-input"
+            name="applicable_department_id"
+            value={
+              form.applicable_department_id
+            }
+            onChange={update}
+          >
+            <option value="">
+              Toàn công ty
+            </option>
+
+            {departments.map(
+              (department) => (
+                <option
+                  key={department.id}
+                  value={department.id}
+                >
+                  {department.name}
+                </option>
+              )
+            )}
+          </select>
+        </label>
+
+        <label>
+          Giờ bắt đầu *
+          <input
+            className="form-input"
+            type="time"
+            name="work_start_time"
+            value={form.work_start_time}
+            onChange={update}
+            required
+          />
+        </label>
+
+        <label>
+          Giờ kết thúc *
+          <input
+            className="form-input"
+            type="time"
+            name="work_end_time"
+            value={form.work_end_time}
+            onChange={update}
+            required
+          />
+        </label>
+
+        <label>
+          Cho phép đi trễ
+          <input
+            className="form-input"
+            type="number"
+            min="0"
+            name="late_threshold_minutes"
+            value={
+              form.late_threshold_minutes
+            }
+            onChange={update}
+          />
+        </label>
+
+        <label>
+          Cho phép về sớm
+          <input
+            className="form-input"
+            type="number"
+            min="0"
+            name="early_leave_threshold_minutes"
+            value={
+              form.early_leave_threshold_minutes
+            }
+            onChange={update}
+          />
+        </label>
+
+        <label>
+          Nghỉ giữa ca
+          <input
+            className="form-input"
+            type="number"
+            min="0"
+            name="break_minutes"
+            value={form.break_minutes}
+            onChange={update}
+          />
+        </label>
+
+        <label>
+          Tính tăng ca sau
+          <input
+            className="form-input"
+            type="number"
+            min="0"
+            name="overtime_after_minutes"
+            value={
+              form.overtime_after_minutes
+            }
+            onChange={update}
+            placeholder="VD: 30"
+          />
+        </label>
+      </div>
+
+      <div className="form-actions">
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={cancel}
+          disabled={saving}
+        >
+          Hủy
+        </button>
+
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={saving}
+        >
+          {saving
+            ? 'Đang lưu...'
+            : editingRule
+              ? 'Cập nhật quy tắc'
+              : 'Lưu quy tắc'}
+        </button>
+      </div>
+    </form>
+  );
+}
 function DataPanel({ title, action, error, children }) { return <div className="glass-panel attendance-panel"><div className="panel-heading"><h2>{title}</h2>{action}</div>{error && <p className="error-message">{error}</p>}{children}</div>; }
 function Stat({ title, value, color }) { return <div className="stat-card glass-panel"><div className="stat-title">{title}</div><div className="stat-value" style={{ color }}>{value}</div></div>; }
 function Time({ value }) { return <span className="time-cell">{value !== '-' && <Clock size={14} />}{value}</span>; }

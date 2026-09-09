@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Home from './pages/Home';
 import ManagerRoute from './components/layout/ManagerRoute';
 import ManagerLayout from './components/layout/ManagerLayout';
@@ -23,7 +22,6 @@ function App() {
             <Router>
                 <Routes>
                     <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
                     <Route path="/" element={<Home />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
                     <Route element={<ManagerRoute />}>

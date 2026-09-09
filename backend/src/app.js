@@ -18,6 +18,7 @@ app.use('/api/employees', verifyToken, authorizeRole(['manager']), employeeRoute
 app.use('/api/projects', verifyToken, authorizeRole(['manager']), projectRoutes);
 app.use('/api/attendance', verifyToken, authorizeRole(['manager']), attendanceRoutes);
 app.use('/api/dashboard', verifyToken, authorizeRole(['manager']), dashboardRoutes);
+app.use('/api/projects', projectRoutes);
 
 app.get('/', (req, res) => {
     res.json({

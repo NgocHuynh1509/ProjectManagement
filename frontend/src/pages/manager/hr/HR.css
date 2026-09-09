@@ -46,15 +46,152 @@
 .table-message { padding: 32px 24px !important; text-align: center; color: var(--text-secondary) !important; }
 .error-message { color: var(--danger) !important; }
 
-.modal-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(17, 24, 39, 0.45); }
-.modal-panel { width: min(720px, 100%); padding: 24px; }
-.modal-header, .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.modal-header { margin-bottom: 24px; }
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.form-grid label { display: flex; flex-direction: column; gap: 8px; color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
-.form-grid .form-input { width: 100%; }
-.modal-actions { justify-content: flex-end; margin-top: 24px; }
-.form-error { margin-top: 16px; }
+/* =========================
+   Add Employee Modal
+   ========================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(17, 24, 39, 0.45);
+}
+
+/* Modal */
+.modal-panel {
+  width: min(720px, 100%);
+  max-height: 90vh;
+
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* Header */
+.modal-header {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 24px;
+
+  margin-bottom: 0;
+
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+/* =========================
+   Form - Scroll Area
+   ========================= */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  padding: 24px;
+
+  /* Thanh cuộn nằm ở đây */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Giới hạn chiều cao */
+  max-height: calc(90vh - 170px);
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Chrome / Edge / Safari */
+.form-grid::-webkit-scrollbar {
+  width: 7px;
+}
+
+.form-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form-grid::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 10px;
+}
+
+.form-grid::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* Label */
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  color: var(--text-secondary);
+
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Input */
+.form-grid .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Địa chỉ chiếm cả 2 cột */
+.form-grid label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+/* =========================
+   Error
+   ========================= */
+
+.form-error {
+  flex-shrink: 0;
+
+  margin: 0;
+  padding: 0 24px 16px;
+}
+
+/* =========================
+   Modal Actions
+   ========================= */
+
+.modal-actions {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+
+  padding: 16px 24px;
+
+  margin-top: 0;
+
+  border-top: 1px solid var(--border-color);
+
+  background-color: var(--bg-surface);
+}
 
 @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
 

@@ -16,7 +16,8 @@ export default function EmployeeList() {
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [form, setForm] = useState({ employee_code: '', full_name: '', email: '', password: '', phone: '', department_id: '', position_id: '', hire_date: '', status: 'active', role: 'employee' });
+  const emptyForm = { employee_code: '', full_name: '', date_of_birth: '', gender: '', email: '', password: '', phone: '', national_id: '', national_id_issue_date: '', national_id_issue_place: '', address: '', avatar_url: '', department_id: '', position_id: '', hire_date: '', status: 'active', role: 'employee' };
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     let active = true;
@@ -40,7 +41,7 @@ export default function EmployeeList() {
     try {
       const { data } = await api.post('/employees', form);
       setEmployees((current) => [...current, data].sort((first, second) => (first.code || '').localeCompare(second.code || '')));
-      setForm({ employee_code: '', full_name: '', email: '', password: '', phone: '', department_id: '', position_id: '', hire_date: '', status: 'active', role: 'employee' });
+      setForm(emptyForm);
       setShowForm(false);
     } catch (requestError) {
       setFormError(requestError.response?.data?.error || 'Không thể thêm nhân viên.');
@@ -73,9 +74,16 @@ export default function EmployeeList() {
           <div className="form-grid">
             <label>Mã nhân viên<input className="form-input" name="employee_code" value={form.employee_code} onChange={updateForm} placeholder="NV005" /></label>
             <label>Họ tên *<input className="form-input" name="full_name" value={form.full_name} onChange={updateForm} required /></label>
+            <label>Ngày sinh<input className="form-input" type="date" name="date_of_birth" value={form.date_of_birth} onChange={updateForm} /></label>
+            <label>Giới tính<select className="form-input" name="gender" value={form.gender} onChange={updateForm}><option value="">Chọn giới tính</option><option value="male">Nam</option><option value="female">Nữ</option><option value="other">Khác</option></select></label>
             <label>Email *<input className="form-input" type="email" name="email" value={form.email} onChange={updateForm} required /></label>
             <label>Mật khẩu tài khoản *<input className="form-input" type="password" name="password" value={form.password} onChange={updateForm} minLength="6" required /></label>
             <label>Số điện thoại<input className="form-input" name="phone" value={form.phone} onChange={updateForm} /></label>
+            <label>CCCD<input className="form-input" name="national_id" value={form.national_id} onChange={updateForm} /></label>
+            <label>Ngày cấp CCCD<input className="form-input" type="date" name="national_id_issue_date" value={form.national_id_issue_date} onChange={updateForm} /></label>
+            <label>Nơi cấp CCCD<input className="form-input" name="national_id_issue_place" value={form.national_id_issue_place} onChange={updateForm} /></label>
+            <label>Địa chỉ<textarea className="form-input" name="address" value={form.address} onChange={updateForm} rows="2" /></label>
+            <label>Ảnh đại diện (URL)<input className="form-input" type="url" name="avatar_url" value={form.avatar_url} onChange={updateForm} /></label>
             <label>Phòng ban<select className="form-input" name="department_id" value={form.department_id} onChange={updateForm} disabled={optionsLoading}><option value="">{optionsLoading ? 'Đang tải phòng ban...' : 'Chọn phòng ban'}</option>{options.departments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
             <label>Chức vụ<select className="form-input" name="position_id" value={form.position_id} onChange={updateForm} disabled={optionsLoading}><option value="">{optionsLoading ? 'Đang tải chức vụ...' : 'Chọn chức vụ'}</option>{options.positions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
             <label>Ngày vào làm<input className="form-input" type="date" name="hire_date" value={form.hire_date} onChange={updateForm} /></label>

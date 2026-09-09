@@ -46,9 +46,6 @@ const Home = () => {
                     <h3>Manager Zone</h3>
                     <p>Welcome to the manager area.</p>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={() => navigate('/register')} style={{ padding: '8px 16px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                            Tạo tài khoản mới
-                        </button>
                         <button onClick={fetchManagerData} style={{ padding: '8px 16px', background: '#ffc107', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                             Test Manager API
                         </button>

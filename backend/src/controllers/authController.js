@@ -1,31 +1,4 @@
 const supabase = require('../config/supabase');
-const supabaseAdmin = require('../config/supabaseAdmin');
-
-exports.register = async (req, res) => {
-    try {
-        const { email, password, role } = req.body;
-
-        const { data, error } = await supabaseAdmin.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true,
-            user_metadata: {
-                role: role || 'employee'
-            }
-        });
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        res.status(201).json({
-            message: 'User created successfully!',
-            user: data.user
-        });
-    } catch (err) {
-        res.status(500).json({ error: 'Server error during user creation' });
-    }
-};
 
 exports.login = async (req, res) => {
     try {
