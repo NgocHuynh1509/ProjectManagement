@@ -9,6 +9,7 @@ const MyProjects = () => {
 
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
 
@@ -16,6 +17,7 @@ const MyProjects = () => {
 
             try {
 
+                setError('');
                 const response =
                     await api.get('/employee/projects');
 
@@ -24,6 +26,10 @@ const MyProjects = () => {
             } catch (error) {
 
                 console.error(error);
+                setError(
+                    error.response?.data?.error ||
+                    'Không thể tải danh sách dự án.'
+                );
 
             } finally {
 
@@ -55,6 +61,15 @@ const MyProjects = () => {
 
                 <div className="projects-empty">
                     Đang tải dự án...
+                </div>
+
+            ) : error ? (
+
+                <div className="projects-empty">
+                    <p>{error}</p>
+                    <button onClick={() => window.location.reload()}>
+                        Thử lại
+                    </button>
                 </div>
 
             ) : projects.length ? (

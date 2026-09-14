@@ -25,7 +25,8 @@ import EmployeeLayout from './components/layout/EmployeeLayout';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import EmployeeProfile from './pages/employee/profile/EmployeeProfile';
 import MyAttendance from './pages/employee/attendance/MyAttendance';
-import MyTasks from './pages/employee/tasks/MyTasks';
+import EmployeeSchedule from './pages/employee/schedule/EmployeeSchedule';
+import EmployeeOvertime from './pages/employee/overtime/EmployeeOvertime';
 import TaskDetail from './pages/employee/tasks/TaskDetail';
 import MyProjects from './pages/employee/projects/MyProjects';
 import MyProjectDetail from './pages/employee/projects/MyProjectDetail';
@@ -195,10 +196,16 @@ function App() {
                                 element={<MyAttendance />}
                             />
 
-                            {/* /employee/tasks */}
+                            {/* /employee/schedule */}
                             <Route
-                                path="tasks"
-                                element={<MyTasks />}
+                                path="schedule"
+                                element={<EmployeeSchedule />}
+                            />
+
+                            {/* /employee/overtime */}
+                            <Route
+                                path="overtime"
+                                element={<EmployeeOvertime />}
                             />
 
                             {/* /employee/tasks/:taskId */}

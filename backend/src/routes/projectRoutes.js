@@ -62,6 +62,26 @@ router.get(
   projectController.getProjectTasks
 );
 
+router.get(
+  '/tasks/:taskId/detail',
+  projectController.getTaskDetail
+);
+
+router.post(
+  '/tasks/:taskId/comments',
+  projectController.addTaskComment
+);
+
+router.post(
+  '/tasks/:taskId/links',
+  projectController.addTaskLink
+);
+
+router.delete(
+  '/tasks/:taskId/links/:linkId',
+  projectController.deleteTaskLink
+);
+
 router.post(
   '/:id/tasks',
   projectController.createTask

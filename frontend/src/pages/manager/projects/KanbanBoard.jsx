@@ -12,7 +12,7 @@ import {
   Trash2,
   X,
   Save,
-  User
+  Link2
 } from 'lucide-react';
 
 import api from '../../../services/api';
@@ -73,7 +73,10 @@ const EMPTY_TASK = {
 export default function KanbanBoard({
   projectId,
   phases = [],
-  employees = []
+  employees = [],
+  managerId,
+  selectedPhaseId = 'all',
+  onSelectPhase
 }) {
   const [tasks, setTasks] = useState({
     todo: [],
@@ -99,6 +102,35 @@ export default function KanbanBoard({
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskDetailLoading, setTaskDetailLoading] = useState(false);
+  const [taskComment, setTaskComment] = useState('');
+  const [taskCommentSending, setTaskCommentSending] = useState(false);
+  const [expandedMyTaskId, setExpandedMyTaskId] = useState(null);
+  const [myTaskDetail, setMyTaskDetail] = useState(null);
+  const [myTaskDetailLoading, setMyTaskDetailLoading] = useState(false);
+  const [myTaskComment, setMyTaskComment] = useState('');
+  const [myTaskCommentSending, setMyTaskCommentSending] = useState(false);
+  const [myTaskLink, setMyTaskLink] = useState({ title: '', url: '' });
+
+  const visibleTasks = Object.fromEntries(
+    Object.entries(tasks).map(([status, statusTasks]) => [
+      status,
+      selectedPhaseId === 'all'
+        ? statusTasks
+        : statusTasks.filter(
+          (task) => task.phase_id === selectedPhaseId
+        )
+    ])
+  );
+
+  const myTasks = Object.values(tasks)
+    .flat()
+    .filter((task) => task.assigneeId === managerId);
+
+  const selectedPhase = phases.find(
+    (phase) => phase.id === selectedPhaseId
+  );
 
   const groupTasks = (taskList) => {
     const grouped = {
@@ -254,6 +286,207 @@ export default function KanbanBoard({
     }
   };
 
+  const openTaskDetail = async (task) => {
+    try {
+      setTaskDetailLoading(true);
+      const { data } = await api.get(`/projects/tasks/${task.id}/detail`);
+      setSelectedTask(data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể tải chi tiết task.');
+    } finally {
+      setTaskDetailLoading(false);
+    }
+  };
+
+  const submitTaskComment = async (event) => {
+    event.preventDefault();
+    if (!selectedTask || !taskComment.trim()) return;
+
+    try {
+      setTaskCommentSending(true);
+      const { data } = await api.post(
+        `/projects/tasks/${selectedTask.id}/comments`,
+        { content: taskComment }
+      );
+      setSelectedTask((previous) => ({
+        ...previous,
+        task_comments: [
+          ...(previous.task_comments || []),
+          data
+        ]
+      }));
+      setTaskComment('');
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        'Không thể gửi bình luận.'
+      );
+    } finally {
+      setTaskCommentSending(false);
+    }
+  };
+
+  const toggleMyTask = async (task) => {
+    if (expandedMyTaskId === task.id) {
+      setExpandedMyTaskId(null);
+      setMyTaskDetail(null);
+      return;
+    }
+
+    try {
+      setExpandedMyTaskId(task.id);
+      setMyTaskDetailLoading(true);
+      const { data } = await api.get(`/projects/tasks/${task.id}/detail`);
+      setMyTaskDetail(data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể tải chi tiết task.');
+      setExpandedMyTaskId(null);
+    } finally {
+      setMyTaskDetailLoading(false);
+    }
+  };
+
+  const updateMyTaskStatus = async (status) => {
+    if (!myTaskDetail || myTaskDetail.status === status) return;
+
+    try {
+      const { data } = await api.put(
+        `/projects/tasks/${myTaskDetail.id}/status`,
+        { status }
+      );
+      setMyTaskDetail((previous) => ({ ...previous, ...data }));
+      await loadTasks();
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể cập nhật trạng thái.');
+    }
+  };
+
+  const addMyTaskLink = async (event) => {
+    event.preventDefault();
+    if (!myTaskDetail || !myTaskLink.url.trim()) return;
+
+    try {
+      const { data } = await api.post(
+        `/projects/tasks/${myTaskDetail.id}/links`,
+        myTaskLink
+      );
+      setMyTaskDetail((previous) => ({
+        ...previous,
+        task_links: [...(previous.task_links || []), data]
+      }));
+      setMyTaskLink({ title: '', url: '' });
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể thêm link.');
+    }
+  };
+
+  const removeMyTaskLink = async (linkId) => {
+    if (!myTaskDetail) return;
+
+    try {
+      await api.delete(`/projects/tasks/${myTaskDetail.id}/links/${linkId}`);
+      setMyTaskDetail((previous) => ({
+        ...previous,
+        task_links: (previous.task_links || []).filter((link) => link.id !== linkId)
+      }));
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể xóa link.');
+    }
+  };
+
+  const submitMyTaskComment = async (event) => {
+    event.preventDefault();
+    if (!myTaskDetail || !myTaskComment.trim()) return;
+
+    try {
+      setMyTaskCommentSending(true);
+      const { data } = await api.post(
+        `/projects/tasks/${myTaskDetail.id}/comments`,
+        { content: myTaskComment }
+      );
+      setMyTaskDetail((previous) => ({
+        ...previous,
+        task_comments: [...(previous.task_comments || []), data]
+      }));
+      setMyTaskComment('');
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể gửi bình luận.');
+    } finally {
+      setMyTaskCommentSending(false);
+    }
+  };
+
+  const renderMyTaskDetail = () => {
+    if (myTaskDetailLoading) {
+      return <div className="manager-inline-task-detail">Đang tải chi tiết...</div>;
+    }
+
+    if (!myTaskDetail) return null;
+
+    return (
+      <div className="manager-inline-task-detail">
+        <p>{myTaskDetail.description || 'Chưa có mô tả.'}</p>
+        <div className="manager-task-status-actions">
+          <span>Cập nhật trạng thái:</span>
+          {COLUMNS.filter((column) => column.id !== 'todo').map((column) => (
+            <button
+              type="button"
+              key={column.id}
+              className={myTaskDetail.status === column.id ? 'active' : ''}
+              onClick={() => updateMyTaskStatus(column.id)}
+            >
+              {column.label}
+            </button>
+          ))}
+        </div>
+        <div className="manager-task-links">
+          <h4>Link đính kèm ({myTaskDetail.task_links?.length || 0})</h4>
+          <form onSubmit={addMyTaskLink}>
+            <input
+              value={myTaskLink.title}
+              onChange={(event) => setMyTaskLink({ ...myTaskLink, title: event.target.value })}
+              placeholder="Tên link"
+            />
+            <input
+              type="url"
+              value={myTaskLink.url}
+              onChange={(event) => setMyTaskLink({ ...myTaskLink, url: event.target.value })}
+              placeholder="https://..."
+              required
+            />
+            <button type="submit">Nộp link</button>
+          </form>
+          {(myTaskDetail.task_links || []).map((link) => (
+            <div className="manager-task-link" key={link.id}>
+              <a href={link.url} target="_blank" rel="noreferrer">{link.title || link.url}</a>
+              <button type="button" onClick={() => removeMyTaskLink(link.id)}>Xóa</button>
+            </div>
+          ))}
+        </div>
+        <div className="manager-task-comments">
+          <h4>Bình luận ({myTaskDetail.task_comments?.length || 0})</h4>
+          {(myTaskDetail.task_comments || []).map((comment) => (
+            <div key={comment.id}>
+              <strong>{comment.employees?.full_name || 'Nhân viên'}</strong>
+              <p>{comment.content}</p>
+            </div>
+          ))}
+          <form onSubmit={submitMyTaskComment}>
+            <textarea
+              value={myTaskComment}
+              onChange={(event) => setMyTaskComment(event.target.value)}
+              placeholder="Viết bình luận..."
+              rows="3"
+            />
+            <button type="submit" disabled={myTaskCommentSending}>
+              {myTaskCommentSending ? 'Đang gửi...' : 'Gửi bình luận'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   const handleDragStart = (
     event,
     task,
@@ -384,10 +617,25 @@ export default function KanbanBoard({
         <div>
           <h2>Bảng Công Việc</h2>
           <p>
-            Kéo task giữa các cột để cập nhật
-            trạng thái.
+            {selectedPhase
+              ? `Đang xem task của phase: ${selectedPhase.name}`
+              : 'Xem và cập nhật task theo từng phase.'}
           </p>
         </div>
+
+        <select
+          className="phase-filter-select"
+          value={selectedPhaseId}
+          onChange={(event) => onSelectPhase?.(event.target.value)}
+          aria-label="Chọn phase để xem task"
+        >
+          <option value="all">Tất cả phase</option>
+          {phases.map((phase) => (
+            <option key={phase.id} value={phase.id}>
+              {phase.name}
+            </option>
+          ))}
+        </select>
 
         <button
           className="btn btn-primary btn-sm"
@@ -435,17 +683,18 @@ export default function KanbanBoard({
               </div>
 
               <span className="task-count">
-                {tasks[column.id].length}
+                {visibleTasks[column.id].length}
               </span>
 
             </div>
 
             <div className="kanban-tasks">
 
-              {tasks[column.id].map((task) => (
+              {visibleTasks[column.id].map((task) => (
                 <div
                   key={task.id}
                   className="task-card glass-panel"
+                  onClick={() => openTaskDetail(task)}
                   draggable
                   onDragStart={(event) =>
                     handleDragStart(
@@ -474,9 +723,10 @@ export default function KanbanBoard({
 
                       <button
                         className="task-action-btn"
-                        onClick={() =>
-                          openEditTask(task)
-                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditTask(task);
+                        }}
                         title="Chỉnh sửa"
                       >
                         <Edit size={14} />
@@ -484,9 +734,10 @@ export default function KanbanBoard({
 
                       <button
                         className="task-action-btn danger"
-                        onClick={() =>
-                          handleDeleteTask(task)
-                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteTask(task);
+                        }}
                         title="Xóa"
                       >
                         <Trash2 size={14} />
@@ -547,6 +798,13 @@ export default function KanbanBoard({
                       </div>
                     )}
 
+                    {task.links > 0 && (
+                      <div className="task-meta-item" title="Link đính kèm">
+                        <Link2 size={14} />
+                        <span>{task.links}</span>
+                      </div>
+                    )}
+
                   </div>
 
                   <div className="task-footer">
@@ -574,7 +832,7 @@ export default function KanbanBoard({
                 </div>
               ))}
 
-              {tasks[column.id].length === 0 && (
+              {visibleTasks[column.id].length === 0 && (
                 <div className="empty-column">
                   Chưa có task
                 </div>
@@ -597,6 +855,98 @@ export default function KanbanBoard({
         ))}
 
       </div>
+
+      <section className="manager-my-tasks">
+        <div className="manager-my-tasks-heading">
+          <div>
+            <h3>Công việc của tôi</h3>
+            <p>Các công việc được giao cho bạn trong dự án này.</p>
+          </div>
+          <span>{myTasks.length} công việc</span>
+        </div>
+
+        {myTasks.length ? (
+          <div className="manager-my-tasks-list">
+            {myTasks.map((task) => (
+              <div className="manager-my-task-group" key={task.id}>
+                <button
+                  type="button"
+                  className="manager-my-task-item"
+                  onClick={() => toggleMyTask(task)}
+                >
+                  <span>
+                    <strong>{task.title}</strong>
+                    <small>{task.assignee}</small>
+                  </span>
+                  <span className={`task-status status-${task.status}`}>
+                    {COLUMNS.find((column) => column.id === task.status)?.label || task.status}
+                    <span className="manager-task-chevron">
+                      {expandedMyTaskId === task.id ? '▾' : '▸'}
+                    </span>
+                  </span>
+                </button>
+                {expandedMyTaskId === task.id && renderMyTaskDetail()}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="manager-my-tasks-empty">Chưa có công việc được giao.</p>
+        )}
+      </section>
+
+      {selectedTask && (
+        <div className="modal-backdrop" onMouseDown={() => setSelectedTask(null)}>
+          <div className="modal-panel glass-panel task-detail-modal" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className={`priority-badge ${selectedTask.priority}`}>{selectedTask.priority}</span>
+                <h2>{selectedTask.title}</h2>
+                <p>{selectedTask.phases?.name || 'Chưa có phase'} · {selectedTask.assignee?.full_name || 'Chưa phân công'}</p>
+              </div>
+              <button className="icon-btn" onClick={() => setSelectedTask(null)}><X size={20} /></button>
+            </div>
+            {taskDetailLoading ? <div className="kanban-loading">Đang tải chi tiết...</div> : (
+              <div className="task-detail-content">
+                <section>
+                  <h3>Mô tả</h3>
+                  <p>{selectedTask.description || 'Chưa có mô tả.'}</p>
+                </section>
+                <section>
+                  <h3>Link đính kèm ({selectedTask.task_links?.length || 0})</h3>
+                  <div className="detail-links-list">
+                    {(selectedTask.task_links || []).map((link) => (
+                      <a key={link.id} href={link.url} target="_blank" rel="noreferrer">
+                        <strong>{link.title || 'Link kết quả'}</strong><span>{link.url}</span>
+                      </a>
+                    ))}
+                    {!selectedTask.task_links?.length && <p>Chưa có link.</p>}
+                  </div>
+                </section>
+                <section>
+                  <h3>Trao đổi ({selectedTask.task_comments?.length || 0})</h3>
+                  <div className="detail-comments-list">
+                    {(selectedTask.task_comments || []).map((item) => (
+                      <div key={item.id}><strong>{item.employees?.full_name || 'Nhân viên'}</strong><p>{item.content}</p></div>
+                    ))}
+                    {!selectedTask.task_comments?.length && <p>Chưa có bình luận.</p>}
+                  </div>
+                  <form className="detail-comment-form" onSubmit={submitTaskComment}>
+                    <textarea
+                      value={taskComment}
+                      onChange={(event) => setTaskComment(event.target.value)}
+                      placeholder="Viết bình luận..."
+                      rows="3"
+                    />
+                    <button type="submit" disabled={taskCommentSending}>
+                      {taskCommentSending ? 'Đang gửi...' : 'Gửi bình luận'}
+                    </button>
+                  </form>
+                </section>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* TASK MODAL */}
       {showTaskForm && (

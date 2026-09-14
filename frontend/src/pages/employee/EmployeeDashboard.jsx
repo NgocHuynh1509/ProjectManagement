@@ -12,17 +12,32 @@ const EmployeeDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // ============================================================
+    // FETCH DASHBOARD
+    // ============================================================
+
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
                 setLoading(true);
                 setError('');
 
-                const response = await api.get('/employee/dashboard');
+                const response = await api.get(
+                    '/employee/dashboard'
+                );
+
+                console.log(
+                    'Employee Dashboard:',
+                    response.data
+                );
 
                 setDashboard(response.data);
+
             } catch (err) {
-                console.error('Employee dashboard error:', err);
+                console.error(
+                    'Employee dashboard error:',
+                    err
+                );
 
                 setError(
                     err.response?.data?.error ||
@@ -36,6 +51,11 @@ const EmployeeDashboard = () => {
         fetchDashboard();
     }, []);
 
+
+    // ============================================================
+    // EMPLOYEE NAME
+    // ============================================================
+
     const getEmployeeName = () => {
         return (
             dashboard?.employee?.full_name ||
@@ -47,6 +67,11 @@ const EmployeeDashboard = () => {
         );
     };
 
+
+    // ============================================================
+    // INITIAL
+    // ============================================================
+
     const getInitial = () => {
         const name = getEmployeeName();
 
@@ -56,25 +81,42 @@ const EmployeeDashboard = () => {
             .toUpperCase();
     };
 
+
+    // ============================================================
+    // DATE
+    // ============================================================
+
     const formatDate = (date) => {
         if (!date) return '--';
 
-        return new Date(date).toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
+        return new Date(date).toLocaleDateString(
+            'vi-VN',
+            {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }
+        );
     };
+
 
     const formatShortDate = (date) => {
         if (!date) return '--';
 
-        return new Date(date).toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-        });
+        return new Date(date).toLocaleDateString(
+            'vi-VN',
+            {
+                day: '2-digit',
+                month: '2-digit'
+            }
+        );
     };
+
+
+    // ============================================================
+    // TASK STATUS
+    // ============================================================
 
     const getTaskStatusText = (status) => {
         const statuses = {
@@ -84,14 +126,20 @@ const EmployeeDashboard = () => {
             review: 'Đang review',
             completed: 'Hoàn thành',
             done: 'Hoàn thành',
-            cancelled: 'Đã hủy',
+            cancelled: 'Đã hủy'
         };
 
-        return statuses[status] || status || 'Chưa xác định';
+        return (
+            statuses[status] ||
+            status ||
+            'Chưa xác định'
+        );
     };
+
 
     const getTaskStatusClass = (status) => {
         switch (status) {
+
             case 'completed':
             case 'done':
                 return 'status-completed';
@@ -110,19 +158,30 @@ const EmployeeDashboard = () => {
         }
     };
 
+
+    // ============================================================
+    // PRIORITY
+    // ============================================================
+
     const getPriorityText = (priority) => {
         const priorities = {
             low: 'Thấp',
             medium: 'Trung bình',
             high: 'Cao',
-            urgent: 'Khẩn cấp',
+            urgent: 'Khẩn cấp'
         };
 
-        return priorities[priority] || priority || 'Trung bình';
+        return (
+            priorities[priority] ||
+            priority ||
+            'Trung bình'
+        );
     };
+
 
     const getPriorityClass = (priority) => {
         switch (priority) {
+
             case 'urgent':
                 return 'priority-urgent';
 
@@ -137,82 +196,139 @@ const EmployeeDashboard = () => {
         }
     };
 
+
+    // ============================================================
+    // ATTENDANCE STATUS
+    // ============================================================
+
     const getAttendanceStatus = () => {
-        const attendance = dashboard?.today_attendance;
+        const attendance =
+            dashboard?.attendance;
 
         if (!attendance) {
             return {
                 text: 'Chưa chấm công',
-                className: 'attendance-not-checked',
+                className:
+                    'attendance-not-checked'
             };
         }
 
-        if (attendance.check_in && attendance.check_out) {
+        if (
+            attendance.check_in_time &&
+            attendance.check_out_time
+        ) {
             return {
                 text: 'Đã hoàn thành',
-                className: 'attendance-completed',
+                className:
+                    'attendance-completed'
             };
         }
 
-        if (attendance.check_in) {
+        if (attendance.check_in_time) {
             return {
                 text: 'Đang làm việc',
-                className: 'attendance-working',
+                className:
+                    'attendance-working'
             };
         }
 
         return {
             text: 'Chưa chấm công',
-            className: 'attendance-not-checked',
+            className:
+                'attendance-not-checked'
         };
     };
+
+
+    // ============================================================
+    // LOADING
+    // ============================================================
 
     if (loading) {
         return (
             <div className="employee-dashboard">
                 <div className="dashboard-loading">
                     <div className="loading-spinner"></div>
-                    <p>Đang tải dashboard...</p>
+
+                    <p>
+                        Đang tải dashboard...
+                    </p>
                 </div>
             </div>
         );
     }
+
+
+    // ============================================================
+    // ERROR
+    // ============================================================
 
     if (error) {
         return (
             <div className="employee-dashboard">
                 <div className="dashboard-error">
-                    <div className="error-icon">!</div>
 
-                    <h2>Không thể tải dashboard</h2>
+                    <div className="error-icon">
+                        !
+                    </div>
 
-                    <p>{error}</p>
+                    <h2>
+                        Không thể tải dashboard
+                    </h2>
+
+                    <p>
+                        {error}
+                    </p>
 
                     <button
                         className="retry-button"
-                        onClick={() => window.location.reload()}
+                        onClick={() =>
+                            window.location.reload()
+                        }
                     >
                         Thử lại
                     </button>
+
                 </div>
             </div>
         );
     }
 
-    const attendanceStatus = getAttendanceStatus();
 
-    const statistics = dashboard?.statistics || {};
+    // ============================================================
+    // DATA
+    // ============================================================
 
-    const tasks = dashboard?.upcoming_tasks || [];
-    const projects = dashboard?.projects || [];
-    const notifications = dashboard?.notifications || [];
+    const attendance =
+        dashboard?.attendance || null;
+
+    const taskStats =
+        dashboard?.taskStats || {};
+
+    const tasks =
+        dashboard?.upcomingTasks || [];
+
+    const projects =
+        dashboard?.projects || [];
+
+    const notifications =
+        dashboard?.notifications || [];
+
+    const attendanceStatus =
+        getAttendanceStatus();
+
+
+    // ============================================================
+    // RENDER
+    // ============================================================
 
     return (
         <div className="employee-dashboard">
 
-            {/* =========================
+            {/* ==================================================
                 HEADER
-            ========================= */}
+            ================================================== */}
+
             <section className="dashboard-header">
 
                 <div className="welcome-section">
@@ -222,6 +338,7 @@ const EmployeeDashboard = () => {
                     </div>
 
                     <div>
+
                         <p className="welcome-label">
                             Xin chào,
                         </p>
@@ -233,13 +350,19 @@ const EmployeeDashboard = () => {
                         <p className="current-date">
                             {formatDate(new Date())}
                         </p>
+
                     </div>
 
                 </div>
 
+
                 <button
                     className="profile-button"
-                    onClick={() => navigate('/employee/profile')}
+                    onClick={() =>
+                        navigate(
+                            '/employee/profile'
+                        )
+                    }
                 >
                     Xem hồ sơ
                 </button>
@@ -247,136 +370,193 @@ const EmployeeDashboard = () => {
             </section>
 
 
-            {/* =========================
-                QUICK STATISTICS
-            ========================= */}
+            {/* ==================================================
+                STATISTICS
+            ================================================== */}
+
             <section className="statistics-grid">
+
+                {/* TASK */}
 
                 <div
                     className="stat-card"
-                    onClick={() => navigate('/employee/tasks')}
+                    onClick={() =>
+                        navigate(
+                            '/employee/projects'
+                        )
+                    }
                 >
+
                     <div className="stat-icon task-icon">
                         ✓
                     </div>
 
                     <div className="stat-content">
+
                         <span className="stat-label">
                             Công việc
                         </span>
 
                         <strong className="stat-value">
-                            {statistics.total_tasks ?? 0}
+                            {taskStats.total ?? 0}
                         </strong>
 
                         <span className="stat-description">
-                            {statistics.pending_tasks ?? 0} công việc đang xử lý
+                            {
+                                (taskStats.todo ?? 0) +
+                                (taskStats.in_progress ?? 0)
+                            }{' '}
+                            công việc đang xử lý
                         </span>
+
                     </div>
+
                 </div>
 
 
+                {/* PROJECT */}
+
                 <div
                     className="stat-card"
-                    onClick={() => navigate('/employee/projects')}
+                    onClick={() =>
+                        navigate(
+                            '/employee/projects'
+                        )
+                    }
                 >
+
                     <div className="stat-icon project-icon">
                         P
                     </div>
 
                     <div className="stat-content">
+
                         <span className="stat-label">
                             Dự án
                         </span>
 
                         <strong className="stat-value">
-                            {statistics.active_projects ?? 0}
+                            {projects.length}
                         </strong>
 
                         <span className="stat-description">
                             Dự án đang tham gia
                         </span>
+
                     </div>
+
                 </div>
 
 
+                {/* ATTENDANCE */}
+
                 <div
                     className="stat-card"
-                    onClick={() => navigate('/employee/attendance')}
+                    onClick={() =>
+                        navigate(
+                            '/employee/attendance'
+                        )
+                    }
                 >
+
                     <div className="stat-icon attendance-icon">
                         ⏱
                     </div>
 
                     <div className="stat-content">
+
                         <span className="stat-label">
-                            Chấm công tháng này
+                            Chấm công hôm nay
                         </span>
 
                         <strong className="stat-value">
-                            {statistics.attendance_days ?? 0}
+                            {attendance ? '1' : '0'}
                         </strong>
 
                         <span className="stat-description">
                             ngày đã chấm công
                         </span>
+
                     </div>
+
                 </div>
 
 
+                {/* LEAVE */}
+
                 <div
                     className="stat-card"
-                    onClick={() => navigate('/employee/leave')}
+                    onClick={() =>
+                        navigate(
+                            '/employee/leave'
+                        )
+                    }
                 >
+
                     <div className="stat-icon leave-icon">
                         L
                     </div>
 
                     <div className="stat-content">
+
                         <span className="stat-label">
-                            Ngày nghỉ
+                            Yêu cầu nghỉ
                         </span>
 
                         <strong className="stat-value">
-                            {statistics.leave_days ?? 0}
+                            {dashboard?.leaveStats?.pending ?? 0}
                         </strong>
 
                         <span className="stat-description">
-                            ngày nghỉ còn lại
+                            yêu cầu đang chờ duyệt
                         </span>
+
                     </div>
+
                 </div>
 
             </section>
 
 
-            {/* =========================
+            {/* ==================================================
                 MAIN GRID
-            ========================= */}
+            ================================================== */}
+
             <section className="dashboard-main-grid">
 
-                {/* =========================
-                    LEFT COLUMN
-                ========================= */}
+                {/* ==================================================
+                    LEFT
+                ================================================== */}
+
                 <div className="dashboard-left">
 
-                    {/* TODAY ATTENDANCE */}
+
+                    {/* ==================================================
+                        ATTENDANCE
+                    ================================================== */}
+
                     <div className="dashboard-card attendance-card">
 
                         <div className="card-header">
 
                             <div>
-                                <h2>Chấm công hôm nay</h2>
+
+                                <h2>
+                                    Chấm công hôm nay
+                                </h2>
 
                                 <p>
                                     Theo dõi thời gian làm việc của bạn
                                 </p>
+
                             </div>
 
                             <button
                                 className="view-all-button"
                                 onClick={() =>
-                                    navigate('/employee/attendance')
+                                    navigate(
+                                        '/employee/attendance'
+                                    )
                                 }
                             >
                                 Xem chi tiết
@@ -390,8 +570,10 @@ const EmployeeDashboard = () => {
                             <div className="attendance-status">
 
                                 <span
-                                    className={`attendance-dot ${attendanceStatus.className}`}
-                                ></span>
+                                    className={
+                                        `attendance-dot ${attendanceStatus.className}`
+                                    }
+                                />
 
                                 <span>
                                     {attendanceStatus.text}
@@ -402,58 +584,83 @@ const EmployeeDashboard = () => {
 
                             <div className="attendance-times">
 
+
+                                {/* CHECK IN */}
+
                                 <div className="attendance-time">
+
                                     <span>
                                         Check-in
                                     </span>
 
                                     <strong>
-                                        {dashboard?.today_attendance?.check_in
+
+                                        {attendance?.check_in_time
                                             ? new Date(
-                                                dashboard.today_attendance.check_in
-                                            ).toLocaleTimeString('vi-VN', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })
+                                                attendance.check_in_time
+                                            ).toLocaleTimeString(
+                                                'vi-VN',
+                                                {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }
+                                            )
                                             : '--:--'}
+
                                     </strong>
+
                                 </div>
 
 
-                                <div className="attendance-divider"></div>
+                                <div className="attendance-divider" />
 
+
+                                {/* CHECK OUT */}
 
                                 <div className="attendance-time">
+
                                     <span>
                                         Check-out
                                     </span>
 
                                     <strong>
-                                        {dashboard?.today_attendance?.check_out
+
+                                        {attendance?.check_out_time
                                             ? new Date(
-                                                dashboard.today_attendance.check_out
-                                            ).toLocaleTimeString('vi-VN', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })
+                                                attendance.check_out_time
+                                            ).toLocaleTimeString(
+                                                'vi-VN',
+                                                {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }
+                                            )
                                             : '--:--'}
+
                                     </strong>
+
                                 </div>
 
 
-                                <div className="attendance-divider"></div>
+                                <div className="attendance-divider" />
 
+
+                                {/* WORK HOURS */}
 
                                 <div className="attendance-time">
+
                                     <span>
                                         Tổng giờ
                                     </span>
 
                                     <strong>
-                                        {dashboard?.today_attendance?.work_hours
-                                            ? `${dashboard.today_attendance.work_hours}h`
+
+                                        {attendance?.work_hours
+                                            ? `${attendance.work_hours}h`
                                             : '--'}
+
                                     </strong>
+
                                 </div>
 
                             </div>
@@ -463,23 +670,32 @@ const EmployeeDashboard = () => {
                     </div>
 
 
-                    {/* UPCOMING TASKS */}
+                    {/* ==================================================
+                        UPCOMING TASKS
+                    ================================================== */}
+
                     <div className="dashboard-card">
 
                         <div className="card-header">
 
                             <div>
-                                <h2>Công việc sắp tới</h2>
+
+                                <h2>
+                                    Công việc sắp tới
+                                </h2>
 
                                 <p>
                                     Những công việc bạn cần hoàn thành
                                 </p>
+
                             </div>
 
                             <button
                                 className="view-all-button"
                                 onClick={() =>
-                                    navigate('/employee/tasks')
+                                    navigate(
+                                        '/employee/projects'
+                                    )
                                 }
                             >
                                 Xem tất cả
@@ -491,6 +707,7 @@ const EmployeeDashboard = () => {
                         {tasks.length === 0 ? (
 
                             <div className="empty-state">
+
                                 <div className="empty-icon">
                                     ✓
                                 </div>
@@ -498,71 +715,80 @@ const EmployeeDashboard = () => {
                                 <p>
                                     Bạn không có công việc sắp tới.
                                 </p>
+
                             </div>
 
                         ) : (
 
                             <div className="task-list">
 
-                                {tasks.slice(0, 5).map((task) => (
+                                {tasks
+                                    .slice(0, 5)
+                                    .map(task => (
 
-                                    <div
-                                        className="task-item"
-                                        key={task.id}
-                                        onClick={() =>
-                                            navigate(
-                                                `/employee/tasks/${task.id}`
-                                            )
-                                        }
-                                    >
+                                        <div
+                                            className="task-item"
+                                            key={task.id}
+                                            onClick={() =>
+                                                navigate(
+                                                    `/employee/tasks/${task.id}`
+                                                )
+                                            }
+                                        >
 
-                                        <div className="task-info">
+                                            <div className="task-info">
 
-                                            <h3>
-                                                {task.title}
-                                            </h3>
+                                                <h3>
+                                                    {task.title}
+                                                </h3>
 
-                                            <p>
-                                                {task.project_name ||
-                                                    'Không thuộc dự án'}
-                                            </p>
+                                                <p>
+                                                    {task.project_name ||
+                                                        'Không thuộc dự án'}
+                                                </p>
+
+                                            </div>
+
+
+                                            <div className="task-meta">
+
+                                                <span
+                                                    className={
+                                                        `priority-badge ${getPriorityClass(
+                                                            task.priority
+                                                        )}`
+                                                    }
+                                                >
+                                                    {getPriorityText(
+                                                        task.priority
+                                                    )}
+                                                </span>
+
+
+                                                <span
+                                                    className={
+                                                        `status-badge ${getTaskStatusClass(
+                                                            task.status
+                                                        )}`
+                                                    }
+                                                >
+                                                    {getTaskStatusText(
+                                                        task.status
+                                                    )}
+                                                </span>
+
+
+                                                <span className="task-deadline">
+                                                    {formatShortDate(
+                                                        task.due_date
+                                                    )}
+                                                </span>
+
+                                            </div>
 
                                         </div>
 
-
-                                        <div className="task-meta">
-
-                                            <span
-                                                className={`priority-badge ${getPriorityClass(
-                                                    task.priority
-                                                )}`}
-                                            >
-                                                {getPriorityText(
-                                                    task.priority
-                                                )}
-                                            </span>
-
-                                            <span
-                                                className={`status-badge ${getTaskStatusClass(
-                                                    task.status
-                                                )}`}
-                                            >
-                                                {getTaskStatusText(
-                                                    task.status
-                                                )}
-                                            </span>
-
-                                            <span className="task-deadline">
-                                                {formatShortDate(
-                                                    task.due_date
-                                                )}
-                                            </span>
-
-                                        </div>
-
-                                    </div>
-
-                                ))}
+                                    ))}
 
                             </div>
 
@@ -573,28 +799,39 @@ const EmployeeDashboard = () => {
                 </div>
 
 
-                {/* =========================
-                    RIGHT COLUMN
-                ========================= */}
+                {/* ==================================================
+                    RIGHT
+                ================================================== */}
+
                 <div className="dashboard-right">
 
-                    {/* PROJECTS */}
+
+                    {/* ==================================================
+                        PROJECTS
+                    ================================================== */}
+
                     <div className="dashboard-card">
 
                         <div className="card-header">
 
                             <div>
-                                <h2>Dự án của tôi</h2>
+
+                                <h2>
+                                    Dự án của tôi
+                                </h2>
 
                                 <p>
                                     Các dự án bạn đang tham gia
                                 </p>
+
                             </div>
 
                             <button
                                 className="view-all-button"
                                 onClick={() =>
-                                    navigate('/employee/projects')
+                                    navigate(
+                                        '/employee/projects'
+                                    )
                                 }
                             >
                                 Xem tất cả
@@ -606,6 +843,7 @@ const EmployeeDashboard = () => {
                         {projects.length === 0 ? (
 
                             <div className="empty-state">
+
                                 <div className="empty-icon">
                                     P
                                 </div>
@@ -613,78 +851,101 @@ const EmployeeDashboard = () => {
                                 <p>
                                     Bạn chưa tham gia dự án nào.
                                 </p>
+
                             </div>
 
                         ) : (
 
                             <div className="project-list">
 
-                                {projects.slice(0, 4).map((project) => (
+                                {projects
+                                    .slice(0, 4)
+                                    .map(project => (
 
-                                    <div
-                                        className="project-item"
-                                        key={project.id}
-                                        onClick={() =>
-                                            navigate(
-                                                `/employee/projects/${project.id}`
-                                            )
-                                        }
-                                    >
+                                        <div
+                                            className="project-item"
+                                            key={project.id}
+                                            onClick={() =>
+                                                navigate(
+                                                    `/employee/projects/${project.id}`
+                                                )
+                                            }
+                                        >
 
-                                        <div className="project-top">
+                                            <div className="project-top">
 
-                                            <div className="project-name">
-                                                {project.name}
+                                                <div className="project-name">
+                                                    {project.name}
+                                                </div>
+
+                                                <span className="project-percent">
+                                                    {project.progress ?? 0}%
+                                                </span>
+
                                             </div>
 
-                                            <span className="project-percent">
-                                                {project.progress ?? 0}%
-                                            </span>
 
-                                        </div>
+                                            <div className="progress-bar">
 
+                                                <div
+                                                    className="progress-value"
+                                                    style={{
+                                                        width: `${Math.min(
+                                                            Math.max(
+                                                                project.progress ?? 0,
+                                                                0
+                                                            ),
+                                                            100
+                                                        )}%`
+                                                    }}
+                                                />
 
-                                        <div className="progress-bar">
-
-                                            <div
-                                                className="progress-value"
-                                                style={{
-                                                    width: `${Math.min(
-                                                        Math.max(
-                                                            project.progress ?? 0,
-                                                            0
-                                                        ),
-                                                        100
-                                                    )}%`,
-                                                }}
-                                            ></div>
-
-                                        </div>
+                                            </div>
 
 
-                                        <div className="project-bottom">
+                                            <div className="project-bottom">
 
-                                            <span>
-                                                {project.completed_tasks ?? 0}
-                                                /
-                                                {project.total_tasks ?? 0}
-                                                {' '}công việc
-                                            </span>
-
-                                            {project.deadline && (
                                                 <span>
-                                                    Deadline:{' '}
-                                                    {formatShortDate(
-                                                        project.deadline
-                                                    )}
+                                                    {
+                                                        project.completed_tasks ??
+                                                        0
+                                                    }
+                                                    /
+                                                    {
+                                                        project.total_tasks ??
+                                                        0
+                                                    }
+                                                    {' '}
+                                                    công việc
                                                 </span>
-                                            )}
+
+
+                                                {project.deadline && (
+
+                                                    <span>
+                                                        Deadline:{' '}
+                                                        {formatShortDate(
+                                                            project.deadline
+                                                        )}
+                                                    </span>
+
+                                                )}
+
+                                            </div>
+
+
+                                            <div className="project-role">
+
+                                                Vai trò:{' '}
+
+                                                {project.role_in_project ||
+                                                    'Thành viên'}
+
+                                            </div>
 
                                         </div>
 
-                                    </div>
-
-                                ))}
+                                    ))}
 
                             </div>
 
@@ -693,23 +954,32 @@ const EmployeeDashboard = () => {
                     </div>
 
 
-                    {/* NOTIFICATIONS */}
+                    {/* ==================================================
+                        NOTIFICATIONS
+                    ================================================== */}
+
                     <div className="dashboard-card">
 
                         <div className="card-header">
 
                             <div>
-                                <h2>Thông báo</h2>
+
+                                <h2>
+                                    Thông báo
+                                </h2>
 
                                 <p>
                                     Cập nhật mới nhất
                                 </p>
+
                             </div>
 
                             <button
                                 className="view-all-button"
                                 onClick={() =>
-                                    navigate('/employee/notifications')
+                                    navigate(
+                                        '/employee/notifications'
+                                    )
                                 }
                             >
                                 Xem tất cả
@@ -721,24 +991,29 @@ const EmployeeDashboard = () => {
                         {notifications.length === 0 ? (
 
                             <div className="empty-state small">
+
                                 <p>
                                     Không có thông báo mới.
                                 </p>
+
                             </div>
 
                         ) : (
 
                             <div className="notification-list">
 
-                                {notifications.slice(0, 4).map(
-                                    (notification) => (
+                                {notifications
+                                    .slice(0, 4)
+                                    .map(notification => (
 
                                         <div
-                                            className={`notification-item ${
-                                                notification.is_read
-                                                    ? ''
-                                                    : 'unread'
-                                            }`}
+                                            className={
+                                                `notification-item ${
+                                                    notification.is_read
+                                                        ? ''
+                                                        : 'unread'
+                                                }`
+                                            }
                                             key={notification.id}
                                         >
 
@@ -770,8 +1045,7 @@ const EmployeeDashboard = () => {
 
                                         </div>
 
-                                    )
-                                )}
+                                    ))}
 
                             </div>
 
@@ -784,20 +1058,27 @@ const EmployeeDashboard = () => {
             </section>
 
 
-            {/* =========================
+            {/* ==================================================
                 QUICK ACTIONS
-            ========================= */}
+            ================================================== */}
+
             <section className="quick-actions">
 
-                <h2>Thao tác nhanh</h2>
+                <h2>
+                    Thao tác nhanh
+                </h2>
 
                 <div className="quick-action-grid">
 
+
                     <button
                         onClick={() =>
-                            navigate('/employee/profile')
+                            navigate(
+                                '/employee/profile'
+                            )
                         }
                     >
+
                         <span className="quick-icon">
                             👤
                         </span>
@@ -805,14 +1086,18 @@ const EmployeeDashboard = () => {
                         <span>
                             Hồ sơ cá nhân
                         </span>
+
                     </button>
 
 
                     <button
                         onClick={() =>
-                            navigate('/employee/attendance')
+                            navigate(
+                                '/employee/attendance'
+                            )
                         }
                     >
+
                         <span className="quick-icon">
                             ⏱
                         </span>
@@ -820,14 +1105,18 @@ const EmployeeDashboard = () => {
                         <span>
                             Xem chấm công
                         </span>
+
                     </button>
 
 
                     <button
                         onClick={() =>
-                            navigate('/employee/tasks')
+                            navigate(
+                                '/employee/projects'
+                            )
                         }
                     >
+
                         <span className="quick-icon">
                             ✓
                         </span>
@@ -835,14 +1124,18 @@ const EmployeeDashboard = () => {
                         <span>
                             Công việc
                         </span>
+
                     </button>
 
 
                     <button
                         onClick={() =>
-                            navigate('/employee/leave')
+                            navigate(
+                                '/employee/leave'
+                            )
                         }
                     >
+
                         <span className="quick-icon">
                             L
                         </span>
@@ -850,6 +1143,7 @@ const EmployeeDashboard = () => {
                         <span>
                             Xin nghỉ phép
                         </span>
+
                     </button>
 
                 </div>

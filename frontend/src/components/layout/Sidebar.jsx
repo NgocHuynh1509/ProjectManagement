@@ -4,8 +4,6 @@ import {
   Users, 
   Briefcase, 
   Clock, 
-  ShieldCheck, 
-  Settings
 } from 'lucide-react';
 import './Layout.css';
 
@@ -14,8 +12,6 @@ const navItems = [
   { path: '/manager/hr', icon: Users, label: 'Nhân Sự' },
   { path: '/manager/projects', icon: Briefcase, label: 'Dự Án' },
   { path: '/manager/attendance', icon: Clock, label: 'Chấm Công' },
-  { path: '/manager/accounts', icon: ShieldCheck, label: 'Tài Khoản' },
-  { path: '/manager/settings', icon: Settings, label: 'Cài Đặt' },
 ];
 
 export default function Sidebar() {

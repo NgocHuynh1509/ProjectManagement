@@ -33,9 +33,14 @@ const EmployeeLayout = () => {
             icon: '🕐'
         },
         {
-            path: '/employee/tasks',
-            label: 'Công việc',
-            icon: '📋'
+            path: '/employee/schedule',
+            label: 'Xếp lịch tuần',
+            icon: '📅'
+        },
+        {
+            path: '/employee/overtime',
+            label: 'Đăng ký tăng ca',
+            icon: '⏱'
         },
         {
             path: '/employee/projects',

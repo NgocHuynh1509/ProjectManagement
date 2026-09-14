@@ -8,6 +8,9 @@ router.get('/options', employeeController.getEmployeeOptions);
 // POST /api/employees
 router.post('/', employeeController.createEmployee);
 
+// PUT /api/employees/:id
+router.put('/:id', employeeController.updateEmployee);
+
 // GET /api/employees
 router.get('/', employeeController.getAllEmployees);
 

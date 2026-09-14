@@ -1,5 +1,16 @@
 const supabase = require('../config/supabaseAdmin');
 
+const getEmployeeErrorMessage = (error) => {
+  if (
+    error?.code === '23505' &&
+    error?.constraint === 'employees_national_id_key'
+  ) {
+    return 'CCCD đã tồn tại, vui lòng nhập CCCD khác.';
+  }
+
+  return error?.message || 'Không thể lưu thông tin nhân viên.';
+};
+
 exports.getEmployeeOptions = async (req, res) => {
   try {
     const [{ data: departments, error: departmentsError }, { data: positions, error: positionsError }] = await Promise.all([
@@ -48,8 +59,26 @@ exports.createEmployee = async (req, res) => {
       return res.status(400).json({ error: 'Vai trò chỉ có thể là manager hoặc employee.' });
     }
 
+    const normalizedEmail = email.trim();
+    const normalizedNationalId = nationalId?.trim() || null;
+
+    if (normalizedNationalId) {
+      const { data: existingEmployee, error: nationalIdError } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('national_id', normalizedNationalId)
+        .maybeSingle();
+
+      if (nationalIdError) throw nationalIdError;
+      if (existingEmployee) {
+        return res.status(409).json({
+          error: 'CCCD đã tồn tại, vui lòng nhập CCCD khác.'
+        });
+      }
+    }
+
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: email.trim(),
+      email: normalizedEmail,
       password,
       email_confirm: true,
       user_metadata: { role, full_name: fullName.trim() }
@@ -72,9 +101,9 @@ exports.createEmployee = async (req, res) => {
           full_name: fullName.trim(),
           date_of_birth: dateOfBirth || null,
           gender: gender || null,
-          email: email.trim(),
+          email: normalizedEmail,
           phone: phone?.trim() || null,
-          national_id: nationalId?.trim() || null,
+          national_id: normalizedNationalId,
           national_id_issue_date: nationalIdIssueDate || null,
           national_id_issue_place: nationalIdIssuePlace?.trim() || null,
           address: address?.trim() || null,
@@ -104,12 +133,15 @@ exports.createEmployee = async (req, res) => {
         role
       });
     } catch (error) {
+      await supabase.from('employees').delete().eq('user_id', userId);
+      await supabase.from('profiles').delete().eq('id', userId);
       await supabase.auth.admin.deleteUser(userId);
       throw error;
     }
   } catch (error) {
     console.error('Error creating employee:', error);
-    res.status(400).json({ error: error.message });
+    const statusCode = error?.code === '23505' ? 409 : 400;
+    res.status(statusCode).json({ error: getEmployeeErrorMessage(error) });
   }
 };
 
@@ -212,5 +244,81 @@ exports.getEmployeeById = async (req, res) => {
   } catch (error) {
     console.error('Error fetching employee details:', error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      employee_code,
+      full_name,
+      email,
+      phone,
+      date_of_birth,
+      gender,
+      national_id,
+      national_id_issue_date,
+      national_id_issue_place,
+      address,
+      hire_date,
+      department_id: departmentId,
+      position_id: positionId
+    } = req.body;
+
+    if (departmentId) {
+      const { data: department, error: departmentError } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('id', departmentId)
+        .maybeSingle();
+
+      if (departmentError) throw departmentError;
+      if (!department) return res.status(400).json({ error: 'Phòng ban không tồn tại.' });
+    }
+
+    if (positionId) {
+      const { data: position, error: positionError } = await supabase
+        .from('positions')
+        .select('id')
+        .eq('id', positionId)
+        .maybeSingle();
+
+      if (positionError) throw positionError;
+      if (!position) return res.status(400).json({ error: 'Chức vụ không tồn tại.' });
+    }
+
+    const { data, error } = await supabase
+      .from('employees')
+      .update({
+        employee_code: employee_code?.trim() || null,
+        full_name: full_name?.trim() || null,
+        email: email?.trim() || null,
+        phone: phone?.trim() || null,
+        date_of_birth: date_of_birth || null,
+        gender: gender || null,
+        national_id: national_id?.trim() || null,
+        national_id_issue_date: national_id_issue_date || null,
+        national_id_issue_place: national_id_issue_place?.trim() || null,
+        address: address?.trim() || null,
+        hire_date: hire_date || null,
+        department_id: departmentId || null,
+        position_id: positionId || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        departments (id, name),
+        positions (id, name)
+      `)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error updating employee:', error);
+    const statusCode = error?.code === '23505' ? 409 : 400;
+    res.status(statusCode).json({ error: getEmployeeErrorMessage(error) });
   }
 };

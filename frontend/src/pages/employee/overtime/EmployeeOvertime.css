@@ -1,0 +1,24 @@
+.overtime-page { padding: 30px; max-width: 1180px; margin: 0 auto; }
+.overtime-eyebrow { display: flex; align-items: center; gap: 7px; color: #4f46e5; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.overtime-page h1 { margin: 7px 0 5px; color: #172033; font-size: 30px; }
+.overtime-page .employee-page-heading p { margin: 0; color: #64748b; }
+.overtime-alert { margin: 20px 0 16px; padding: 12px 15px; border-radius: 8px; font-size: 14px; }
+.overtime-alert.error { background: #fef2f2; color: #b91c1c; }
+.overtime-alert.success { background: #ecfdf5; color: #047857; }
+.overtime-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.overtime-card { display: flex; flex-direction: column; min-height: 280px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+.overtime-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: #64748b; font-size: 13px; }
+.overtime-status { padding: 5px 9px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; }
+.overtime-status.registered { background: #dbeafe; color: #1d4ed8; }
+.overtime-card h2 { margin: 18px 0; color: #172033; font-size: 19px; }
+.overtime-detail { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; color: #475569; font-size: 14px; }
+.overtime-detail svg { color: #4f46e5; }
+.overtime-department { margin-top: 4px; color: #64748b; font-size: 13px; }
+.overtime-note { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 13px; }
+.overtime-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; width: 100%; margin-top: auto; padding: 10px 14px; border: 0; border-radius: 8px; background: #4f46e5; color: #fff; font-weight: 700; cursor: pointer; }
+.overtime-button.secondary { background: #fff; border: 1px solid #cbd5e1; color: #475569; }
+.overtime-button:disabled { cursor: wait; opacity: .6; }
+.overtime-empty { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-top: 24px; padding: 60px 20px; border-radius: 12px; background: #fff; color: #64748b; text-align: center; }
+.overtime-empty strong { color: #334155; }
+@media (max-width: 900px) { .overtime-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .overtime-page { padding: 18px; } .overtime-page h1 { font-size: 25px; } .overtime-grid { grid-template-columns: 1fr; } }

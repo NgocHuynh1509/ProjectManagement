@@ -1,14 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Filter, Download, Calendar as CalendarIcon, Clock, FileText, Settings2, Monitor, Plus } from 'lucide-react';
+import { Search, Filter, Download, Calendar as CalendarIcon, CalendarClock, Clock, FileText, Settings2, Monitor, Plus } from 'lucide-react';
 import api from '../../../services/api';
 import './Attendance.css';
+import ManagerScheduling from './ManagerScheduling';
 
 const tabs = [
   { id: 'summary', label: 'Tổng hợp', icon: CalendarIcon },
+  { id: 'exceptions', label: 'Vắng, trễ', icon: Clock },
   { id: 'logs', label: 'Nhật ký quét', icon: FileText },
   { id: 'rules', label: 'Quy tắc', icon: Settings2 },
-  { id: 'devices', label: 'Thiết bị', icon: Monitor }
+  { id: 'devices', label: 'Thiết bị', icon: Monitor },
+  { id: 'scheduling', label: 'Lịch & tăng ca', icon: CalendarClock }
 ];
+
+const formatDuration = (minutes) => {
+  const totalMinutes = Number(minutes) || 0;
+  if (!totalMinutes) return '-';
+
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
+  return [
+    hours ? `${hours} giờ` : '',
+    remainingMinutes ? `${remainingMinutes} phút` : ''
+  ].filter(Boolean).join(' ');
+};
 
 export default function AttendanceOverview() {
   const [activeTab, setActiveTab] = useState('summary');
@@ -16,14 +32,18 @@ export default function AttendanceOverview() {
     <div className="page-header"><h1 className="page-title">Quản Lý Chấm Công</h1></div>
     <div className="attendance-tabs">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={`attendance-tab ${activeTab === id ? 'active' : ''}`} onClick={() => setActiveTab(id)}><Icon size={17} />{label}</button>)}</div>
     {activeTab === 'summary' && <SummaryTab />}
+    {activeTab === 'exceptions' && <ExceptionsTab />}
     {activeTab === 'logs' && <LogsTab />}
     {activeTab === 'rules' && <RulesTab />}
     {activeTab === 'devices' && <DevicesTab />}
+    {activeTab === 'scheduling' && <ManagerScheduling />}
   </div>;
 }
 
 function SummaryTab() {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [summary, setSummary] = useState([]);
@@ -33,25 +53,25 @@ function SummaryTab() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
-    api.get('/attendance/summary', { params: { date } })
+    api.get('/attendance/summary', { params: { from: fromDate, to: toDate } })
       .then(({ data }) => { if (active) setSummary(data); })
       .catch((requestError) => { if (active) setError(requestError.response?.data?.error || 'Không thể tải dữ liệu chấm công.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [date]);
+  }, [fromDate, toDate]);
 
   const filteredSummary = useMemo(() => summary.filter((record) => {
     const query = searchTerm.trim().toLowerCase();
     return (!query || record.name?.toLowerCase().includes(query)) && (statusFilter === 'all' || record.status === statusFilter);
   }), [summary, searchTerm, statusFilter]);
-  const stats = { normal: summary.filter((record) => record.status === 'normal').length, late: summary.filter((record) => record.status === 'late').length, absent: summary.filter((record) => record.status === 'absent').length, leave: summary.filter((record) => record.status === 'leave').length };
+  const stats = { normal: summary.filter((record) => record.status === 'normal').length, late: summary.filter((record) => record.status === 'late').length, early: summary.filter((record) => record.status === 'early_leave').length, absent: summary.filter((record) => record.status === 'absent').length };
   const exportReport = () => {
-    const header = ['Ngày', 'Nhân viên', 'Phòng ban', 'Giờ vào', 'Giờ ra', 'Giờ làm', 'Trễ (phút)', 'Về sớm (phút)', 'Tăng ca', 'Trạng thái'];
-    const rows = filteredSummary.map((record) => [record.date, record.name, record.department, record.checkIn, record.checkOut, record.workHours, record.late, record.early, record.overtime, record.status]);
+    const header = ['Ngày', 'Nhân viên', 'Phòng ban', 'Giờ vào', 'Giờ ra', 'Giờ làm', 'Trễ', 'Về sớm', 'Tăng ca', 'Trạng thái'];
+    const rows = filteredSummary.map((record) => [record.date, record.name, record.department, record.checkIn, record.checkOut, record.workHours, formatDuration(record.late), formatDuration(record.early), record.overtime, record.status]);
     const csv = [header, ...rows].map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `bao-cao-cham-cong-${date}.csv`;
+    link.download = `bao-cao-cham-cong-${fromDate}-${toDate}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -59,10 +79,42 @@ function SummaryTab() {
   return <>
     <div className="attendance-actions"><button className="btn btn-outline" type="button" onClick={exportReport}><Download size={18} /> Xuất báo cáo</button></div>
     <div className="stats-row">
-      <Stat title="Đi làm đủ" value={stats.normal} color="var(--status-active)" /><Stat title="Đi trễ" value={stats.late} color="var(--warning)" /><Stat title="Vắng mặt" value={stats.absent} color="var(--danger)" /><Stat title="Nghỉ phép" value={stats.leave} color="var(--info)" />
+      <Stat title="Đi làm đủ" value={stats.normal} color="var(--status-active)" /><Stat title="Đi trễ" value={stats.late} color="var(--warning)" /><Stat title="Về sớm" value={stats.early} color="var(--info)" /><Stat title="Vắng mặt" value={stats.absent} color="var(--danger)" />
     </div>
-    <div className="glass-panel table-container"><div className="table-toolbar"><div className="attendance-toolbar-group"><div className="search-box"><CalendarIcon size={18} /><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></div><div className="search-box"><Search size={18} /><input placeholder="Tìm theo tên..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /></div></div><label className="filter-select"><Filter size={18} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Tất cả trạng thái</option><option value="normal">Bình thường</option><option value="late">Đi trễ</option><option value="early_leave">Về sớm</option><option value="absent">Vắng mặt</option><option value="leave">Nghỉ phép</option><option value="holiday">Ngày lễ</option></select></label></div><table className="data-table"><thead><tr><th>Nhân viên</th><th>Phòng ban</th><th>Giờ vào</th><th>Giờ ra</th><th>Giờ làm</th><th>Trễ</th><th>Về sớm</th><th>Tăng ca</th><th>Trạng thái</th></tr></thead><tbody><TableState loading={loading} error={error} empty={!filteredSummary.length} colSpan="9" />{!loading && !error && filteredSummary.map((record) => <tr key={record.id}><td><strong>{record.name}</strong></td><td>{record.department}</td><td><Time value={record.checkIn} /></td><td><Time value={record.checkOut} /></td><td>{record.workHours}</td><td>{record.late}</td><td>{record.early}</td><td>{record.overtime}</td><td><span className={`badge ${record.status}`}>{record.status.replace('_', ' ')}</span></td></tr>)}</tbody></table></div>
+    <div className="glass-panel table-container"><div className="table-toolbar"><div className="attendance-toolbar-group"><div className="search-box"><CalendarIcon size={18} /><label>Từ ngày <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label></div><div className="search-box"><CalendarIcon size={18} /><label>Đến ngày <input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value)} /></label></div><div className="search-box"><Search size={18} /><input placeholder="Tìm theo tên..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /></div></div><label className="filter-select"><Filter size={18} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Tất cả trạng thái</option><option value="normal">Bình thường</option><option value="late">Đi trễ</option><option value="early_leave">Về sớm</option><option value="absent">Vắng mặt</option><option value="holiday">Ngày lễ</option></select></label></div><table className="data-table"><thead><tr><th>Ngày</th><th>Nhân viên</th><th>Phòng ban</th><th>Giờ vào</th><th>Giờ ra</th><th>Giờ làm</th><th>Trễ</th><th>Về sớm</th><th>Tăng ca</th><th>Trạng thái</th></tr></thead><tbody><TableState loading={loading} error={error} empty={!filteredSummary.length} colSpan="10" />{!loading && !error && filteredSummary.map((record) => <tr key={record.id}><td>{record.date}</td><td><strong>{record.name}</strong></td><td>{record.department}</td><td><Time value={record.checkIn} /></td><td><Time value={record.checkOut} /></td><td>{record.workHours}</td><td>{formatDuration(record.late)}</td><td>{formatDuration(record.early)}</td><td>{record.overtime}</td><td><span className={`badge ${record.status}`}>{record.status.replace('_', ' ')}</span></td></tr>)}</tbody></table></div>
   </>;
+}
+
+function ExceptionsTab() {
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const scanAbsent = async () => {
+    try {
+      await api.post('/attendance/absent/scan', { date: toDate });
+      setError('');
+      const { data } = await api.get('/attendance/exceptions', { params: { from: fromDate, to: toDate } });
+      setRecords(data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Không thể quét vắng.');
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api.get('/attendance/exceptions', { params: { from: fromDate, to: toDate } })
+      .then(({ data }) => { if (active) setRecords(data); })
+      .catch((requestError) => { if (active) setError(requestError.response?.data?.error || 'Không thể tải dữ liệu vắng, trễ.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [fromDate, toDate]);
+
+  return <DataPanel title="Danh sách vắng, trễ" action={<button className="btn btn-outline" onClick={scanAbsent}><CalendarClock size={17} /> Quét vắng ngày đến</button>}><div className="attendance-range-filter"><label className="date-filter-field"><span>Từ ngày</span><div className="date-input-wrap"><CalendarIcon size={17} /><input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></div></label><label className="date-filter-field"><span>Đến ngày</span><div className="date-input-wrap"><CalendarIcon size={17} /><input type="date" min={fromDate} value={toDate} onChange={(event) => setToDate(event.target.value)} /></div></label></div><table className="data-table"><thead><tr><th>Ngày</th><th>Nhân viên</th><th>Phòng ban</th><th>Trạng thái</th><th>Trễ</th><th>Về sớm</th></tr></thead><tbody><TableState loading={loading} error={error} empty={!records.length} colSpan="6" />{!loading && !error && records.map((record) => <tr key={record.id}><td>{record.date}</td><td><strong>{record.name}</strong></td><td>{record.department}</td><td><span className={`badge ${record.status}`}>{record.status === 'late' ? 'Đi trễ' : record.status === 'early_leave' ? 'Về sớm' : record.status === 'leave' ? 'Nghỉ phép' : 'Vắng mặt'}</span></td><td>{formatDuration(record.late)}</td><td>{formatDuration(record.early)}</td></tr>)}</tbody></table></DataPanel>;
 }
 
 function LogsTab() {

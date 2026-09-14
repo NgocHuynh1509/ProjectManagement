@@ -14,6 +14,7 @@ const MyAttendance = () => {
 
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
 
@@ -22,6 +23,7 @@ const MyAttendance = () => {
             try {
 
                 setLoading(true);
+                setError('');
 
                 const response = await api.get(
                     '/employee/attendance',
@@ -38,6 +40,10 @@ const MyAttendance = () => {
             } catch (error) {
 
                 console.error(error);
+                setError(
+                    error.response?.data?.error ||
+                    'Không thể tải dữ liệu chấm công.'
+                );
 
             } finally {
 
@@ -104,6 +110,15 @@ const MyAttendance = () => {
 
                 <div className="attendance-loading">
                     Đang tải dữ liệu...
+                </div>
+
+            ) : error ? (
+
+                <div className="attendance-loading">
+                    <p>{error}</p>
+                    <button onClick={() => window.location.reload()}>
+                        Thử lại
+                    </button>
                 </div>
 
             ) : (

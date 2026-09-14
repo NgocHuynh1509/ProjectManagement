@@ -794,7 +794,8 @@ exports.getProjectTasks = async (req, res) => {
           id,
           full_name
         ),
-        task_comments(id)
+        task_comments(id),
+        task_links(id)
       `)
       .in('phase_id', phaseIds)
       .order('created_at', { ascending: true });
@@ -814,6 +815,7 @@ exports.getProjectTasks = async (req, res) => {
       assignee: task.assignee?.full_name || 'Chưa phân công',
       createdBy: task.creator?.full_name || '',
       comments: task.task_comments?.length || 0,
+      links: task.task_links?.length || 0,
       phase_id: task.phase_id,
       created_at: task.created_at,
       updated_at: task.updated_at
@@ -826,6 +828,140 @@ exports.getProjectTasks = async (req, res) => {
     res.status(500).json({
       error: error.message || 'Không thể tải danh sách công việc.'
     });
+  }
+};
+
+exports.getTaskDetail = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        phases(id, name, project_id, projects(id, name)),
+        assignee:employees!tasks_assignee_id_fkey(id, full_name),
+        task_comments(id, content, created_at, employee_id, employees(full_name)),
+        task_links(id, title, url, created_at, employee_id)
+      `)
+      .eq('id', taskId)
+      .single();
+
+    if (error) return res.status(404).json({ error: 'Không tìm thấy công việc.' });
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching task detail:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.addTaskComment = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const content = req.body.content?.trim();
+
+    if (!content) {
+      return res.status(400).json({
+        error: 'Nội dung bình luận không được để trống.'
+      });
+    }
+
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (employeeError || !employee) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản nhân viên.' });
+    }
+
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('id', taskId)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: 'Không tìm thấy công việc.' });
+    }
+
+    const { data, error } = await supabase
+      .from('task_comments')
+      .insert({
+        task_id: taskId,
+        employee_id: employee.id,
+        content
+      })
+      .select('id, content, created_at, employee_id, employees(full_name)')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('Manager add task comment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.addTaskLink = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { title, url } = req.body || {};
+
+    if (!url?.trim()) {
+      return res.status(400).json({ error: 'Link kết quả là bắt buộc.' });
+    }
+
+    try {
+      new URL(url.trim());
+    } catch {
+      return res.status(400).json({ error: 'Link kết quả không hợp lệ.' });
+    }
+
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (employeeError || !employee) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản nhân viên.' });
+    }
+
+    const { data, error } = await supabase
+      .from('task_links')
+      .insert({
+        task_id: taskId,
+        employee_id: employee.id,
+        title: title?.trim() || 'Link kết quả',
+        url: url.trim()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('Manager add task link error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteTaskLink = async (req, res) => {
+  try {
+    const { taskId, linkId } = req.params;
+    const { error } = await supabase
+      .from('task_links')
+      .delete()
+      .eq('id', linkId)
+      .eq('task_id', taskId);
+
+    if (error) throw error;
+    res.json({ message: 'Đã xóa link.' });
+  } catch (error) {
+    console.error('Manager delete task link error:', error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -887,6 +1023,23 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({
         error: 'Trạng thái công việc không hợp lệ.'
       });
+    }
+
+    if (assignee_id) {
+      const { data: member, error: memberError } = await supabase
+        .from('project_members')
+        .select('employee_id')
+        .eq('project_id', projectId)
+        .eq('employee_id', assignee_id)
+        .maybeSingle();
+
+      if (memberError) throw memberError;
+
+      if (!member) {
+        return res.status(400).json({
+          error: 'Chỉ có thể giao công việc cho thành viên của dự án.'
+        });
+      }
     }
 
     const { data, error } = await supabase

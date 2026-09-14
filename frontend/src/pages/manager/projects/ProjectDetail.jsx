@@ -14,7 +14,8 @@ import {
   Plus,
   Trash2,
   X,
-  Save
+  Save,
+  Pencil
 } from 'lucide-react';
 
 import KanbanBoard from './KanbanBoard';
@@ -47,6 +48,7 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('kanban');
+  const [selectedPhaseId, setSelectedPhaseId] = useState('all');
 
   const [project, setProject] = useState(null);
   const [employees, setEmployees] = useState([]);
@@ -100,6 +102,17 @@ export default function ProjectDetail() {
 
       setProject(data);
 
+      setSelectedPhaseId((currentPhaseId) => {
+        if (
+          currentPhaseId === 'all' ||
+          data.phases?.some((phase) => phase.id === currentPhaseId)
+        ) {
+          return currentPhaseId;
+        }
+
+        return data.phases?.[0]?.id || 'all';
+      });
+
       setProjectForm({
         name: data.name || '',
         description: data.description || '',
@@ -129,6 +142,13 @@ export default function ProjectDetail() {
       console.error(requestError);
     }
   };
+
+  const projectMemberIds = new Set(
+    (project?.members || []).map((member) => member.id)
+  );
+  const projectEmployees = employees.filter((employee) =>
+    projectMemberIds.has(employee.id)
+  );
 
   useEffect(() => {
     loadProject();
@@ -513,10 +533,10 @@ export default function ProjectDetail() {
                   />
 
                   <div
-                    className="phase-content"
-                    onClick={() =>
-                      openEditPhase(phase)
-                    }
+                    className={`phase-content ${
+                      selectedPhaseId === phase.id ? 'selected' : ''
+                    }`}
+                    onClick={() => setSelectedPhaseId(phase.id)}
                   >
                     <span className="phase-name">
                       {index + 1}. {phase.name}
@@ -530,6 +550,14 @@ export default function ProjectDetail() {
                       ] || phase.status}
                     </span>
                   </div>
+
+                  <button
+                    className="phase-edit-btn"
+                    onClick={() => openEditPhase(phase)}
+                    title="Chỉnh sửa phase"
+                  >
+                    <Pencil size={13} />
+                  </button>
 
                   <button
                     className="phase-delete-btn"
@@ -609,7 +637,10 @@ export default function ProjectDetail() {
               <KanbanBoard
                 projectId={projectId}
                 phases={project.phases || []}
-                employees={employees}
+                employees={projectEmployees}
+                managerId={project.manager_id}
+                selectedPhaseId={selectedPhaseId}
+                onSelectPhase={setSelectedPhaseId}
               />
             )}
 

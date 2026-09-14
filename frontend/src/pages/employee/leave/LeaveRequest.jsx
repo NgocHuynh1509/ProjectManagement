@@ -7,6 +7,7 @@ const LeaveRequest = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [error, setError] = useState('');
 
     const [form, setForm] = useState({
         leave_type: 'annual',
@@ -20,6 +21,7 @@ const LeaveRequest = () => {
 
         try {
 
+            setError('');
             const response =
                 await api.get('/employee/leave');
 
@@ -28,6 +30,10 @@ const LeaveRequest = () => {
         } catch (error) {
 
             console.error(error);
+            setError(
+                error.response?.data?.error ||
+                'Không thể tải lịch sử nghỉ phép.'
+            );
 
         } finally {
 
@@ -258,6 +264,13 @@ const LeaveRequest = () => {
                             Đang tải...
                         </div>
 
+                    ) : error ? (
+
+                        <div className="leave-empty">
+                            <p>{error}</p>
+                            <button onClick={fetchRequests}>Thử lại</button>
+                        </div>
+
                     ) : requests.length ? (
 
                         <div className="leave-list">
@@ -296,19 +309,15 @@ const LeaveRequest = () => {
                                             {item.status}
                                         </span>
 
-                                        {item.status === 'pending' && (
-
-                                            <button
-                                                onClick={() =>
-                                                    cancelRequest(
-                                                        item.id
-                                                    )
-                                                }
-                                            >
-                                                Hủy
-                                            </button>
-
-                                        )}
+                                        <button
+                                            onClick={() =>
+                                                cancelRequest(
+                                                    item.id
+                                                )
+                                            }
+                                        >
+                                            Hủy
+                                        </button>
 
                                     </div>
 

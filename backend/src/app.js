@@ -5,7 +5,11 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+// Một số máy chấm công gửi JSON với Content-Type: text/plain.
+app.use(express.json({
+    type: ['application/json', 'text/plain']
+}));
+app.use(express.urlencoded({ extended: true }));
 
 const authRoutes = require('./routes/authRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
@@ -49,8 +53,6 @@ app.use(
 // Attendance - Manager only
 app.use(
     '/api/attendance',
-    verifyToken,
-    authorizeRole(['manager']),
     attendanceRoutes
 );
 

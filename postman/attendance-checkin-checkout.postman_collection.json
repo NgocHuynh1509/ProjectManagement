@@ -1,0 +1,126 @@
+{
+  "info": {
+    "_postman_id": "7b7f1b4c-9a5c-4ef7-8d9d-employee-attendance",
+    "name": "Project Management - Attendance Check-in Checkout",
+    "description": "Test MCC check-in/check-out. The employee must have a confirmed scheduled shift for the selected work date.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "deviceCode",
+      "value": "MCC-01"
+    },
+    {
+      "key": "employeeCode",
+      "value": "NV001"
+    },
+    {
+      "key": "checkInTime",
+      "value": "2026-09-15T08:05:00+07:00"
+    },
+    {
+      "key": "checkOutTime",
+      "value": "2026-09-15T18:30:00+07:00"
+    }
+  ],
+  "item": [
+    {
+      "name": "Check-in",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_code\": \"{{deviceCode}}\",\n  \"employee_code\": \"{{employeeCode}}\",\n  \"check_time\": \"{{checkInTime}}\",\n  \"check_type\": \"in\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendance/device/push",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "device",
+            "push"
+          ]
+        },
+        "description": "Records the first check-in and updates employee_scheduled_shifts.check_in_time."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP response is successful', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test('Check-in was accepted', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.attendance.check_type).to.eql('in');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check-out",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_code\": \"{{deviceCode}}\",\n  \"employee_code\": \"{{employeeCode}}\",\n  \"check_time\": \"{{checkOutTime}}\",\n  \"check_type\": \"out\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendance/device/push",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "device",
+            "push"
+          ]
+        },
+        "description": "Records the final check-out and updates work_hours, overtime_hours, status, and attendance_daily_summary."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP response is successful', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test('Check-out was accepted', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.attendance.check_type).to.eql('out');",
+              "    pm.expect(body.attendance).to.have.property('work_hours');",
+              "    pm.expect(body.attendance).to.have.property('overtime_hours');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
