@@ -2,60 +2,76 @@ import { useEffect, useState } from 'react';
 import api from '../../../services/api';
 import './MyAttendance.css';
 
-const MyAttendance = () => {
+interface AttendanceRecord {
+    id: number | string;
+    work_date: string;
+    check_in_time?: string | null;
+    check_out_time?: string | null;
+    work_hours?: number | null;
+    late_minutes?: number | null;
+    early_leave_minutes?: number | null;
+    overtime_hours?: number | null;
+    status: string;
+}
 
+interface AttendanceStatistics {
+    totalDays?: number;
+    presentDays?: number;
+    lateDays?: number;
+    totalOvertimeHours?: number;
+}
+
+interface AttendanceData {
+    statistics?: AttendanceStatistics;
+    records?: AttendanceRecord[];
+}
+
+const MyAttendance = () => {
     const today = new Date();
 
-    const [month, setMonth] =
-        useState(today.getMonth() + 1);
+    const [month, setMonth] = useState<number>(
+        today.getMonth() + 1
+    );
 
-    const [year, setYear] =
-        useState(today.getFullYear());
+    const [year, setYear] = useState<number>(
+        today.getFullYear()
+    );
 
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [data, setData] = useState<AttendanceData | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
 
     useEffect(() => {
-
         const fetchAttendance = async () => {
-
             try {
-
                 setLoading(true);
                 setError('');
 
-                const response = await api.get(
+                const response = await api.get<AttendanceData>(
                     '/employee/attendance',
                     {
                         params: {
                             month,
-                            year
-                        }
+                            year,
+                        },
                     }
                 );
 
                 setData(response.data);
-
-            } catch (error) {
-
+            } catch (error: any) {
                 console.error(error);
+
                 setError(
                     error.response?.data?.error ||
                     'Không thể tải dữ liệu chấm công.'
                 );
-
             } finally {
-
                 setLoading(false);
-
             }
         };
 
         fetchAttendance();
-
     }, [month, year]);
-
 
     return (
         <div className="attendance-page">
@@ -64,6 +80,7 @@ const MyAttendance = () => {
 
                 <div>
                     <h1>Chấm công của tôi</h1>
+
                     <p>
                         Theo dõi lịch sử chấm công và thời gian làm việc
                     </p>
@@ -73,7 +90,7 @@ const MyAttendance = () => {
 
                     <select
                         value={month}
-                        onChange={e =>
+                        onChange={(e) =>
                             setMonth(Number(e.target.value))
                         }
                     >
@@ -92,7 +109,7 @@ const MyAttendance = () => {
 
                     <select
                         value={year}
-                        onChange={e =>
+                        onChange={(e) =>
                             setYear(Number(e.target.value))
                         }
                     >
@@ -105,7 +122,6 @@ const MyAttendance = () => {
 
             </div>
 
-
             {loading ? (
 
                 <div className="attendance-loading">
@@ -116,7 +132,10 @@ const MyAttendance = () => {
 
                 <div className="attendance-loading">
                     <p>{error}</p>
-                    <button onClick={() => window.location.reload()}>
+
+                    <button
+                        onClick={() => window.location.reload()}
+                    >
                         Thử lại
                     </button>
                 </div>
@@ -131,49 +150,54 @@ const MyAttendance = () => {
 
                         <div className="attendance-stat">
                             <span>📅</span>
+
                             <strong>
                                 {data?.statistics?.totalDays || 0}
                             </strong>
+
                             <p>Ngày có dữ liệu</p>
                         </div>
 
                         <div className="attendance-stat">
                             <span>✅</span>
+
                             <strong>
                                 {data?.statistics?.presentDays || 0}
                             </strong>
+
                             <p>Ngày đi làm</p>
                         </div>
 
                         <div className="attendance-stat">
                             <span>⏰</span>
+
                             <strong>
                                 {data?.statistics?.lateDays || 0}
                             </strong>
+
                             <p>Ngày đi trễ</p>
                         </div>
 
                         <div className="attendance-stat">
                             <span>⌛</span>
+
                             <strong>
                                 {data?.statistics?.totalOvertimeHours || 0}h
                             </strong>
+
                             <p>Tăng ca</p>
                         </div>
 
                     </div>
-
 
                     {/* TABLE */}
 
                     <div className="attendance-card">
 
                         <div className="attendance-card-header">
-
                             <h2>
                                 Lịch sử chấm công
                             </h2>
-
                         </div>
 
                         <div className="attendance-table-wrapper">
@@ -181,7 +205,6 @@ const MyAttendance = () => {
                             <table>
 
                                 <thead>
-
                                     <tr>
                                         <th>Ngày</th>
                                         <th>Check-in</th>
@@ -192,14 +215,13 @@ const MyAttendance = () => {
                                         <th>OT</th>
                                         <th>Trạng thái</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
 
                                     {data?.records?.length ? (
 
-                                        data.records.map(record => (
+                                        data.records.map((record) => (
 
                                             <tr key={record.id}>
 
@@ -262,7 +284,7 @@ const MyAttendance = () => {
                                         <tr>
 
                                             <td
-                                                colSpan="8"
+                                                colSpan={8}
                                                 className="attendance-empty"
                                             >
                                                 Chưa có dữ liệu chấm công.
